@@ -48,3 +48,26 @@ export const ImportedPlaylistSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 export type ImportedPlaylist = z.infer<typeof ImportedPlaylistSchema>;
+
+export const ImportJobStatusSchema = z.enum([
+  'pending',
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+export type ImportJobStatus = z.infer<typeof ImportJobStatusSchema>;
+
+export interface ImportJob {
+  readonly id: string;
+  readonly playlistId: string;
+  readonly sourceName: string;
+  readonly destinationName: string;
+  readonly status: ImportJobStatus;
+  readonly requestedLimit?: number;
+  readonly batchSize: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly completedAt?: string;
+  readonly error?: ImportErrorPayload;
+}
