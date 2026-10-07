@@ -74,3 +74,18 @@ export class DestinationError extends ImportError {
     super(message, details, cause);
   }
 }
+
+export class ImportLimitError extends ImportError {
+  readonly code = 'IMPORT_LIMIT_EXCEEDED' as const;
+
+  constructor(
+    requestedLimit: number,
+    maxAllowed: number,
+    additionalDetails: Record<string, unknown> = {}
+  ) {
+    super(
+      `Requested import limit (${requestedLimit}) exceeds the maximum safety ceiling of ${maxAllowed} tracks.`,
+      { requestedLimit, maxAllowed, ...additionalDetails }
+    );
+  }
+}
