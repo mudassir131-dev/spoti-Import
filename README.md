@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="Spoti Import Logo" width="230"/>
+  <img src="assets/logo.png" alt="Spoti Import Logo" width="240"/>
 </p>
 
 <h1 align="center">Spoti Import</h1>
@@ -14,7 +14,7 @@
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/TypeScript-Strict%20ESM-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript Strict"/></a>
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/Tests-48%20Passed%20%7C%20Vitest-10B981?style=for-the-badge&logo=vitest" alt="Vitest Passed"/></a>
   <a href="#-security--credentials"><img src="https://img.shields.io/badge/Security-Zero%20Secrets%20in%20Repo-EF4444?style=for-the-badge&logo=security" alt="Security"/></a>
-  <a href="#-license"><img src="https://img.shields.io/badge/License-GNU%20GPL%20v2-F59E0B?style=for-the-badge&logo=gnu" alt="GNU GPL v2 License"/></a>
+  <a href="#-license"><img src="https://img.shields.io/badge/License-GNU%20GPL%20v3-F59E0B?style=for-the-badge&logo=gnu" alt="GNU GPL v3 License"/></a>
 </p>
 
 ---
@@ -517,6 +517,6 @@ In accordance with Phase 2 boundaries, the following capabilities are explicitly
 
 ## 📜 License
 
-This project is open-source software licensed under the **GNU General Public License Version 2 (GPL-2.0)** - see the [LICENSE](LICENSE) file for the full text of the license terms and conditions.
+This project is open-source software licensed under the **GNU General Public License Version 3.0 (GPL-3.0)** - see the [LICENSE](LICENSE) file for the full text of the license terms and conditions.
 
-Under the GNU GPL, you are free to inspect, run, share, and modify the code, provided that any derivative works also remain open-source and free under the same license terms.
+Under the GNU GPL v3.0, you are free to inspect, run, share, and modify the code, provided that any derivative works also remain open-source and free under the same license terms.
