@@ -36,3 +36,15 @@ export const ImportedTrackSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 export type ImportedTrack = z.infer<typeof ImportedTrackSchema>;
+
+export const ImportedPlaylistSchema = z.object({
+  source: z.string().min(1, 'Source identifier is required'),
+  sourceId: z.string().min(1, 'Source ID is required'),
+  title: z.string().min(1, 'Playlist title cannot be empty'),
+  description: z.string().optional(),
+  owner: z.string().optional(),
+  totalTracks: z.number().int().nonnegative().optional(),
+  artwork: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+export type ImportedPlaylist = z.infer<typeof ImportedPlaylistSchema>;
