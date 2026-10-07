@@ -50,3 +50,15 @@ export class ValidationError extends ImportError {
     super(message, details, cause);
   }
 }
+
+export class SourceError extends ImportError {
+  readonly code = 'SOURCE_ERROR' as const;
+
+  constructor(
+    message: string,
+    details: { sourceName: string; operation: string; [key: string]: unknown },
+    cause?: unknown
+  ) {
+    super(message, details, cause);
+  }
+}
