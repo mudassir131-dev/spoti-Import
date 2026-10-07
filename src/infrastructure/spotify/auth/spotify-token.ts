@@ -20,3 +20,13 @@ export interface SpotifyToken {
 }
 
 export const DEFAULT_SAFETY_WINDOW_SECONDS = 60;
+
+export function isTokenExpired(
+  token: SpotifyToken,
+  safetyWindowSeconds: number = DEFAULT_SAFETY_WINDOW_SECONDS,
+  nowMs: number = Date.now()
+): boolean {
+  const expiresAtMs = token.obtainedAt + token.expiresIn * 1000;
+  const safetyMarginMs = Math.max(0, safetyWindowSeconds) * 1000;
+  return nowMs >= expiresAtMs - safetyMarginMs;
+}
