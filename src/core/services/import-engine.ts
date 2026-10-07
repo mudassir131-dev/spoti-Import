@@ -57,3 +57,10 @@ const ImportRequestBaseSchema = z.object({
   limit: z.number().int('limit must be an integer').positive('limit must be positive').optional(),
   batchSize: z.number().int('batchSize must be an integer').positive('batchSize must be positive').optional(),
 });
+
+// Safety ceiling enforcement helper
+function checkSafetyLimit(limit?: number): void {
+  if (typeof limit === 'number' && limit > MAX_IMPORT_TRACKS) {
+    throw new ImportLimitError(limit, MAX_IMPORT_TRACKS);
+  }
+}
