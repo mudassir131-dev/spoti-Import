@@ -1,91 +1,121 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Radial Glow -->
-    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#4F46E5" stop-opacity="0.3" />
-      <stop offset="40%" stop-color="#7C3AED" stop-opacity="0.15" />
-      <stop offset="80%" stop-color="#EC4899" stop-opacity="0.05" />
+    <!-- Background Ambient Glow -->
+    <radialGradient id="tileGlow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#2E1065" stop-opacity="0.45" />
+      <stop offset="40%" stop-color="#1E1B4B" stop-opacity="0.25" />
+      <stop offset="80%" stop-color="#0F172A" stop-opacity="0.05" />
       <stop offset="100%" stop-color="#000000" stop-opacity="0" />
     </radialGradient>
 
-    <!-- Top Ribbon Gradient: Amber -> Coral -> Neon Violet -> Electric Blue -->
-    <linearGradient id="topRibbonGrad" x1="15%" y1="20%" x2="85%" y2="50%">
-      <stop offset="0%" stop-color="#FFD166" />
-      <stop offset="25%" stop-color="#FF7A00" />
-      <stop offset="50%" stop-color="#E040FB" />
-      <stop offset="75%" stop-color="#5B51D8" />
-      <stop offset="100%" stop-color="#2575FC" />
+    <!-- Squircle Tile Gradient -->
+    <linearGradient id="squircleBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#14151D" />
+      <stop offset="50%" stop-color="#0F1017" />
+      <stop offset="100%" stop-color="#0A0B10" />
     </linearGradient>
 
-    <!-- Top Ribbon Highlight / Rim Lighting -->
-    <linearGradient id="rimLight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFE082" stop-opacity="0.9" />
-      <stop offset="30%" stop-color="#FFFFFF" stop-opacity="0.4" />
-      <stop offset="70%" stop-color="#8B5CF6" stop-opacity="0.2" />
-      <stop offset="100%" stop-color="#00F5D4" stop-opacity="0.8" />
+    <linearGradient id="squircleBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D3142" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#1A1C28" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#10121C" stop-opacity="0.5" />
     </linearGradient>
 
-    <!-- Middle S-Curve Underfold Gradient -->
-    <linearGradient id="middleFoldGrad" x1="75%" y1="25%" x2="25%" y2="75%">
-      <stop offset="0%" stop-color="#2575FC" />
-      <stop offset="35%" stop-color="#4C1D95" />
-      <stop offset="70%" stop-color="#2E0854" />
-      <stop offset="100%" stop-color="#0F051D" />
+    <!-- Top Orb Spherical Gradient: Gold -> Coral -> Fuchsia -> Royal Blue -> Cyan -->
+    <linearGradient id="orbGrad" x1="12%" y1="15%" x2="88%" y2="85%">
+      <stop offset="0%" stop-color="#FFBE3B" />
+      <stop offset="18%" stop-color="#FF6B2B" />
+      <stop offset="42%" stop-color="#F43F85" />
+      <stop offset="68%" stop-color="#A855F7" />
+      <stop offset="85%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#06B6D4" />
     </linearGradient>
 
-    <!-- Lower Loop Base & Shell Gradient -->
-    <linearGradient id="lowerShellGrad" x1="10%" y1="50%" x2="70%" y2="90%">
-      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.9" />
-      <stop offset="30%" stop-color="#311042" stop-opacity="0.8" />
-      <stop offset="60%" stop-color="#4C1D95" stop-opacity="0.9" />
-      <stop offset="100%" stop-color="#FF6B6B" stop-opacity="0.8" />
+    <!-- Orb Specular Top-Left Highlight -->
+    <linearGradient id="orbSpecular" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85" />
+      <stop offset="25%" stop-color="#FFE082" stop-opacity="0.5" />
+      <stop offset="60%" stop-color="#FF5722" stop-opacity="0" />
     </linearGradient>
 
-    <!-- Outer Rim Accent Gradient -->
-    <linearGradient id="outerHexRim" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF9F1C" />
-      <stop offset="30%" stop-color="#F72585" />
-      <stop offset="60%" stop-color="#7209B7" />
-      <stop offset="85%" stop-color="#3A0CA3" />
-      <stop offset="100%" stop-color="#4CC9F0" />
+    <!-- Crystal Base Shell Body -->
+    <linearGradient id="crystalBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1338" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#130F26" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#0D091A" stop-opacity="0.98" />
     </linearGradient>
 
-    <!-- Waves Gradient (Iconic Spotify-style curved acoustic waves) -->
+    <!-- Left Fiery Coral Neon Rim -->
+    <linearGradient id="leftNeonRim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFB300" />
+      <stop offset="30%" stop-color="#FF3366" />
+      <stop offset="70%" stop-color="#E040FB" />
+      <stop offset="100%" stop-color="#7C4DFF" />
+    </linearGradient>
+
+    <!-- Right Cyan / Electric Blue Neon Rim -->
+    <linearGradient id="rightNeonRim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00F5FF" />
+      <stop offset="40%" stop-color="#0091FF" />
+      <stop offset="80%" stop-color="#7C4DFF" />
+      <stop offset="100%" stop-color="#FF2E93" />
+    </linearGradient>
+
+    <!-- Top Crown Golden Arc Rim -->
+    <linearGradient id="topCrownRim" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#FFA000" stop-opacity="0.2" />
+      <stop offset="50%" stop-color="#FFE57F" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#FF6D00" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Acoustic Wave 1 (Upper) -->
     <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#72EEF6" />
-      <stop offset="50%" stop-color="#4F75FE" />
-      <stop offset="100%" stop-color="#A855F7" />
+      <stop offset="0%" stop-color="#E879F9" />
+      <stop offset="50%" stop-color="#C084FC" />
+      <stop offset="100%" stop-color="#818CF8" />
     </linearGradient>
 
+    <!-- Acoustic Wave 2 (Lower) -->
     <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#55A6FE" />
-      <stop offset="50%" stop-color="#7C3AED" />
-      <stop offset="100%" stop-color="#D946EF" />
+      <stop offset="0%" stop-color="#A855F7" />
+      <stop offset="60%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#38BDF8" />
     </linearGradient>
 
-    <linearGradient id="waveGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4361EE" />
-      <stop offset="50%" stop-color="#9333EA" />
-      <stop offset="100%" stop-color="#F43F5E" />
+    <!-- Arrow Ribbon Stem: Amber Gold into Hot Pink -->
+    <linearGradient id="arrowStemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE082" />
+      <stop offset="40%" stop-color="#FF9100" />
+      <stop offset="100%" stop-color="#FF1744" />
     </linearGradient>
 
-    <!-- Arrow Gradient: Sunrise Gold into Sunset Magenta -->
-    <linearGradient id="arrowGrad" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#FFD166" />
-      <stop offset="25%" stop-color="#FF8E3C" />
-      <stop offset="60%" stop-color="#D946EF" />
-      <stop offset="100%" stop-color="#8B5CF6" />
+    <!-- Arrow Head Body Gradient: Sunset Coral -> Neon Magenta -> Violet -->
+    <linearGradient id="arrowHeadGrad" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#FF6E40" />
+      <stop offset="35%" stop-color="#F50057" />
+      <stop offset="70%" stop-color="#D500F9" />
+      <stop offset="100%" stop-color="#7C4DFF" />
     </linearGradient>
 
-    <linearGradient id="arrowHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFF3BF" stop-opacity="0.9" />
-      <stop offset="100%" stop-color="#FF5722" stop-opacity="0.3" />
+    <!-- Arrow Neon Outline -->
+    <linearGradient id="arrowOutlineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3E0" />
+      <stop offset="50%" stop-color="#FF4081" />
+      <stop offset="100%" stop-color="#E040FB" />
     </linearGradient>
 
-    <!-- Neon Drop Shadow Filter -->
-    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="16" result="blur1" />
-      <feGaussianBlur stdDeviation="32" result="blur2" />
+    <!-- Filters for Neon Luminosity -->
+    <filter id="neonBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="intenseNeon" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur1" />
+      <feGaussianBlur stdDeviation="14" result="blur2" />
       <feMerge>
         <feMergeNode in="blur2" />
         <feMergeNode in="blur1" />
@@ -93,129 +123,167 @@
       </feMerge>
     </filter>
 
-    <!-- Inner Soft Ambient Shadow -->
-    <filter id="softInnerShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="4" dy="12" stdDeviation="18" flood-color="#000000" flood-opacity="0.6" />
+    <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.8" />
     </filter>
   </defs>
 
-  <!-- Deep Cosmic Black Background with Radial Neon Aura -->
-  <rect width="800" height="800" rx="160" fill="#0A0B10" />
-  <circle cx="400" cy="400" r="380" fill="url(#bgGlow)" />
+  <!-- Deep Black Canvas -->
+  <rect width="512" height="512" fill="#000000" />
 
-  <!-- Outer Glassmorphic Geometric Hexagon Frame Base -->
-  <path d="M 390 115 
-           C 425 115, 605 210, 625 240
-           C 645 270, 650 490, 630 525
-           C 610 560, 430 670, 395 670
-           C 360 670, 185 570, 168 535
-           C 150 500, 150 280, 172 245
-           C 195 210, 355 115, 390 115 Z"
-        fill="url(#lowerShellGrad)"
-        stroke="url(#outerHexRim)"
-        stroke-width="3"
-        stroke-opacity="0.4"
-        filter="url(#softInnerShadow)" />
+  <!-- App Icon Squircle Container -->
+  <g filter="url(#tileShadow)">
+    <rect x="52" y="32" width="408" height="408" rx="98" fill="url(#squircleBg)" stroke="url(#squircleBorder)" stroke-width="2" />
+    <!-- Ambient Internal Nebula Glow -->
+    <rect x="52" y="32" width="408" height="408" rx="98" fill="url(#tileGlow)" />
+  </g>
 
-  <!-- Backfolded Dark Cavity Depth -->
-  <path d="M 230 290
-           C 310 220, 500 240, 560 320
-           C 600 375, 590 460, 520 515
-           C 470 555, 380 585, 320 600
-           C 270 590, 210 550, 195 490
-           C 185 410, 195 340, 230 290 Z"
-        fill="url(#middleFoldGrad)" />
+  <!-- ================= CRYSTAL GEMSTONE SILHOUETTE ================= -->
+  <!-- Outer Translucent Faceted Crystal Hull -->
+  <path d="M 256 78
+           C 290 78, 350 102, 368 132
+           C 378 148, 372 268, 362 292
+           C 350 320, 290 366, 256 370
+           C 222 366, 162 320, 150 292
+           C 140 268, 134 148, 144 132
+           C 162 102, 222 78, 256 78 Z"
+        fill="url(#crystalBodyGrad)" />
 
-  <!-- Spotify Sound Waves (Three iconic rounded glowing sonic bars) -->
-  <g id="soundWaves" filter="url(#neonGlow)">
-    <!-- Wave 1 (Top Wave: Longest curve) -->
-    <path d="M 205 385 
-             C 270 380, 375 410, 420 460 
-             C 432 473, 418 492, 400 488
-             C 360 445, 265 418, 202 422
-             C 185 423, 188 387, 205 385 Z"
+  <!-- Ambient Internal Glass Backlight Shadow -->
+  <path d="M 160 160 C 240 100, 320 100, 352 160 C 370 230, 340 310, 256 345 C 172 310, 142 230, 160 160 Z"
+        fill="#090A14" />
+
+  <!-- ================= TOP CIRCULAR GRADIENT DOME ================= -->
+  <!-- Circular Vibrant Gradient Disc (Gold -> Red -> Magenta -> Blue) -->
+  <g id="topGradientDome">
+    <circle cx="256" cy="186" r="102" fill="url(#orbGrad)" />
+
+    <!-- Specular Convex Glass Crescent Reflection on Top Rim -->
+    <path d="M 174 150
+             C 192 110, 230 92, 275 92
+             C 310 92, 340 105, 354 132
+             C 334 116, 295 106, 260 106
+             C 215 106, 185 125, 174 150 Z"
+          fill="url(#orbSpecular)" />
+  </g>
+
+  <!-- ================= SCULPTED 3D CRESCENT SLOT / FOLD ================= -->
+  <!-- Dark Deep Horizon Crevice curving beneath the dome -->
+  <path d="M 158 190
+           C 185 228, 240 252, 325 242
+           C 340 240, 354 235, 362 228
+           C 358 250, 335 272, 305 282
+           C 255 298, 195 275, 160 226
+           C 154 218, 153 205, 158 190 Z"
+        fill="#0A0618" />
+
+  <!-- Deep Shadow Under-curve Lip -->
+  <path d="M 162 195
+           C 205 240, 270 255, 325 242
+           C 270 262, 195 246, 162 195 Z"
+        fill="#05030D" />
+
+  <!-- ================= SPOTIFY SOUND WAVE RIBS ================= -->
+  <!-- Wave Rib 1 (Upper Lavender/Fuchsia Curved Bar) -->
+  <g filter="url(#neonBlur)">
+    <path d="M 152 238
+             C 180 232, 218 248, 238 274
+             C 244 282, 236 295, 225 292
+             C 205 272, 175 258, 150 258
+             C 142 258, 144 240, 152 238 Z"
           fill="url(#waveGrad1)" />
 
-    <!-- Wave 2 (Middle Wave: Medium curve) -->
-    <path d="M 205 450 
-             C 260 448, 345 475, 385 520 
-             C 396 533, 382 550, 365 547
-             C 330 510, 255 486, 202 487
-             C 186 488, 189 452, 205 450 Z"
+    <!-- Wave Rib 2 (Lower Violet/Blue Curved Bar) -->
+    <path d="M 150 278
+             C 178 274, 208 288, 224 312
+             C 229 320, 221 332, 212 329
+             C 196 312, 172 300, 148 300
+             C 140 300, 142 280, 150 278 Z"
           fill="url(#waveGrad2)" />
-
-    <!-- Wave 3 (Bottom Wave: Shortest curve) -->
-    <path d="M 208 518 
-             C 255 516, 315 540, 348 578 
-             C 359 591, 345 607, 330 603
-             C 300 572, 248 552, 205 554
-             C 190 554, 193 520, 208 518 Z"
-          fill="url(#waveGrad3)" />
   </g>
 
-  <!-- Main Sweeping 3D S-Ribbon (Upper Loop + Fold) -->
-  <g id="mainRibbon" filter="url(#neonGlow)">
-    <!-- Upper Sweeping Band -->
-    <path d="M 190 300
-             C 175 240, 225 180, 290 145
-             C 365 105, 480 120, 550 175
-             C 615 225, 630 300, 595 365
-             C 555 435, 465 460, 385 435
-             C 330 415, 275 365, 220 330
-             C 198 316, 192 308, 190 300 Z"
-          fill="url(#topRibbonGrad)" />
-
-    <!-- Top Gloss Highlight Rim -->
-    <path d="M 290 145
-             C 365 105, 480 120, 550 175
-             C 605 220, 625 280, 605 340"
+  <!-- ================= NEON FACETED CONTOUR EDGES ================= -->
+  <!-- Left Hot Coral/Neon Pink Sweeping Rim Flare -->
+  <g filter="url(#intenseNeon)">
+    <!-- Thin Core Flare -->
+    <path d="M 215 88
+             C 170 108, 142 142, 140 190
+             C 138 245, 152 288, 185 328
+             C 205 352, 230 368, 252 372"
           fill="none"
-          stroke="url(#rimLight)"
-          stroke-width="5"
+          stroke="url(#leftNeonRim)"
+          stroke-width="3.5"
+          stroke-linecap="round" />
+  </g>
+
+  <!-- Hot Coral Left Crest Glow Accent -->
+  <path d="M 160 160
+           C 148 190, 152 240, 175 285"
+        fill="none"
+        stroke="#FF3366"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        opacity="0.8" />
+
+  <!-- Right Electric Cyan / Azure Rim Highlight -->
+  <g filter="url(#neonBlur)">
+    <path d="M 355 138
+             C 368 160, 368 200, 362 235
+             C 356 268, 335 305, 300 338"
+          fill="none"
+          stroke="url(#rightNeonRim)"
+          stroke-width="3"
+          stroke-linecap="round" />
+  </g>
+
+  <!-- Top Crown Golden Horizon Rim Flare -->
+  <path d="M 205 85
+           C 230 76, 280 76, 305 85"
+        fill="none"
+        stroke="url(#topCrownRim)"
+        stroke-width="3"
+        stroke-linecap="round"
+        filter="url(#neonBlur)" />
+
+  <!-- ================= IMPORT DOWNWARD ARROW ================= -->
+  <!-- Angled Golden Ribbon Stem dipping down into the arrowhead -->
+  <g id="importArrowGroup" filter="url(#intenseNeon)">
+    <!-- Golden Curved Stem -->
+    <path d="M 285 258
+             C 305 264, 325 278, 332 295
+             L 332 312
+             C 328 300, 310 285, 292 278 Z"
+          fill="url(#arrowStemGrad)" />
+
+    <!-- Stem Glow Spine -->
+    <path d="M 288 260 C 310 270, 328 288, 332 308"
+          fill="none"
+          stroke="#FFE082"
+          stroke-width="2"
           stroke-linecap="round" />
 
-    <!-- Under-fold Shading for 3D Twist -->
-    <path d="M 220 330
-             C 285 375, 360 425, 435 440
-             C 490 450, 545 425, 575 385
-             C 560 440, 490 495, 410 495
-             C 335 495, 260 445, 205 375
-             C 195 345, 205 335, 220 330 Z"
-          fill="url(#middleFoldGrad)"
-          opacity="0.9" />
+    <!-- Downward Arrowhead -->
+    <!-- Pointing directly down with faceted crystal finish -->
+    <path d="M 298 312
+             L 366 312
+             L 332 366
+             Z"
+          fill="url(#arrowHeadGrad)"
+          stroke="url(#arrowOutlineGrad)"
+          stroke-width="2.5"
+          stroke-linejoin="round" />
 
-    <!-- Lower Wrap Around Band Edge -->
-    <path d="M 195 490
-             C 175 420, 185 330, 230 270
-             C 210 320, 200 400, 215 480
-             C 235 550, 290 610, 360 635
-             C 430 660, 510 645, 560 600
-             C 500 635, 420 645, 350 620
-             C 280 595, 220 545, 195 490 Z"
-          fill="url(#outerHexRim)" />
-  </g>
+    <!-- Arrow Internal Faceted Highlight Centerline -->
+    <path d="M 332 314 L 332 362"
+          stroke="#FFFFFF"
+          stroke-width="2"
+          stroke-linecap="round"
+          opacity="0.8" />
 
-  <!-- Lower Right Downward Ingestion / Import Arrow -->
-  <g id="importArrow" filter="url(#neonGlow)">
-    <!-- Arrow Body & Head (Ingesting / Downward Movement) -->
-    <path d="M 465 470
-             C 505 480, 540 505, 555 530
-             L 555 570
-             L 640 570
-             L 575 660
-             C 568 670, 552 670, 545 660
-             L 480 570
-             L 520 570
-             L 520 520
-             C 500 505, 480 490, 465 470 Z"
-          fill="url(#arrowGrad)"
-          stroke="url(#arrowHighlight)"
-          stroke-width="3" />
-
-    <!-- Arrow Specular Core Highlight -->
-    <path d="M 545 575 L 560 630"
-          stroke="#FFF"
-          stroke-width="3"
+    <!-- Specular Left Arrow Bevel Highlight -->
+    <path d="M 304 316 L 332 360"
+          stroke="#FFE0B2"
+          stroke-width="1.2"
           stroke-linecap="round"
           opacity="0.6" />
   </g>
