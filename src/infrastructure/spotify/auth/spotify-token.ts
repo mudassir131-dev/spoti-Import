@@ -9,3 +9,12 @@ export const SpotifyTokenResponseSchema = z.object({
 });
 
 export type SpotifyTokenResponse = z.infer<typeof SpotifyTokenResponseSchema>;
+
+export interface SpotifyToken {
+  readonly accessToken: string;
+  readonly tokenType: string;
+  readonly expiresIn: number;
+  readonly refreshToken?: string;
+  readonly scope?: string;
+  readonly obtainedAt: number;
+}
