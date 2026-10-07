@@ -68,3 +68,104 @@ export class SpotifyApiError extends Error {
     this.retryable = options.retryable ?? (options.status === 429 || (options.status >= 500 && options.status < 600));
   }
 }
+
+import { SourceError } from '../../../core/domain/errors.js';
+
+/**
+ * Raised when a Spotify playlist URL or identifier is invalid, malformed, or of an unsupported resource type.
+ */
+export class SpotifyPlaylistUrlError extends SourceError {
+  constructor(message: string, details: Record<string, unknown> = {}, cause?: unknown) {
+    super(
+      message,
+      {
+        sourceName: 'spotify',
+        operation: 'parsePlaylistUrl',
+        ...details,
+      },
+      cause
+    );
+    this.name = 'SpotifyPlaylistUrlError';
+  }
+}
+
+/**
+ * Raised when a Spotify playlist is not found, private, or inaccessible without authentication.
+ */
+export class SpotifyUnavailableError extends SourceError {
+  readonly status: number;
+
+  constructor(message: string, status = 404, details: Record<string, unknown> = {}, cause?: unknown) {
+    super(
+      message,
+      {
+        sourceName: 'spotify',
+        operation: 'fetchPlaylist',
+        status,
+        ...details,
+      },
+      cause
+    );
+    this.name = 'SpotifyUnavailableError';
+    this.status = status;
+  }
+}
+
+/**
+ * Raised when the Spotify response format is unexpected or fails schema validation.
+ */
+export class SpotifyMalformedResponseError extends SourceError {
+  constructor(message: string, details: Record<string, unknown> = {}, cause?: unknown) {
+    super(
+      message,
+      {
+        sourceName: 'spotify',
+        operation: 'parseResponse',
+        ...details,
+      },
+      cause
+    );
+    this.name = 'SpotifyMalformedResponseError';
+  }
+}
+
+/**
+ * Raised when network connectivity to Spotify fails or encounters a timeout.
+ */
+export class SpotifyNetworkError extends SourceError {
+  constructor(message: string, details: Record<string, unknown> = {}, cause?: unknown) {
+    super(
+      message,
+      {
+        sourceName: 'spotify',
+        operation: 'networkRequest',
+        ...details,
+      },
+      cause
+    );
+    this.name = 'SpotifyNetworkError';
+  }
+}
+
+/**
+ * Raised when rate limiting (HTTP 429) is encountered on Spotify public endpoints.
+ */
+export class SpotifyRateLimitError extends SourceError {
+  readonly retryAfterSeconds?: number;
+
+  constructor(message: string, retryAfterSeconds?: number, details: Record<string, unknown> = {}, cause?: unknown) {
+    super(
+      message,
+      {
+        sourceName: 'spotify',
+        operation: 'rateLimit',
+        retryAfterSeconds,
+        ...details,
+      },
+      cause
+    );
+    this.name = 'SpotifyRateLimitError';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
