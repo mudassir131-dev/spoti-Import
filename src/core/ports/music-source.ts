@@ -59,4 +59,11 @@ export interface MusicSource {
    * Fetches tracks for the given playlist
    */
   getTracks(playlistId: string, options?: GetTracksOptions): Promise<SourceTrackPage>;
+
+  /**
+   * Optional streaming / async iterable generator yielding tracks incrementally.
+   * Enables true memory-safe processing without buffering all tracks in an array.
+   */
+  getTrackStream?(playlistId: string, options?: GetTracksOptions): AsyncIterable<ImportedTrack>;
 }
+
