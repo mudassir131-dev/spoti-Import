@@ -24,6 +24,7 @@ import {
 import type { MusicSource, SourceTrackPage } from '../ports/music-source.js';
 import type { MusicDestination } from '../ports/music-destination.js';
 import type { TrackNormalizer } from '../ports/track-normalizer.js';
+import type { CheckpointStore } from '../ports/checkpoint-store.js';
 import { DefaultTrackNormalizer } from './default-track-normalizer.js';
 
 export interface ImportRequest {
@@ -36,12 +37,25 @@ export interface ImportRequest {
    * If false or omitted (default), preserves playlist order and duplicate occurrences.
    */
   readonly deduplicate?: boolean;
+  /**
+   * Explicit job/import ID for tracking or resuming from a checkpoint.
+   */
+  readonly jobId?: string;
+  /**
+   * Alias for jobId.
+   */
+  readonly importId?: string;
+  /**
+   * If true, forces restart of an import even if a completed checkpoint exists.
+   */
+  readonly forceRestart?: boolean;
 }
 
 export interface ImportExecutionOptions {
   readonly source?: MusicSource;
   readonly destination?: MusicDestination;
   readonly normalizer?: TrackNormalizer;
+  readonly checkpointStore?: CheckpointStore;
   readonly throwOnError?: boolean;
   readonly onProgress?: (progress: ImportProgress) => void;
 }
@@ -50,6 +64,7 @@ export interface ImportEngineConfig {
   readonly source?: MusicSource;
   readonly destination?: MusicDestination;
   readonly normalizer?: TrackNormalizer;
+  readonly checkpointStore?: CheckpointStore;
   readonly defaultBatchSize?: number;
   readonly throwOnError?: boolean;
 }
@@ -70,12 +85,16 @@ const ImportRequestBaseSchema = z.object({
   limit: z.number().int('limit must be an integer').positive('limit must be positive').optional(),
   batchSize: z.number().int('batchSize must be an integer').positive('batchSize must be positive').optional(),
   deduplicate: z.boolean().optional(),
+  jobId: z.string().optional(),
+  importId: z.string().optional(),
+  forceRestart: z.boolean().optional(),
 });
 
 
 export class ImportEngine {
   private readonly defaultSource?: MusicSource;
   private readonly defaultDestination?: MusicDestination;
+  private readonly defaultCheckpointStore?: CheckpointStore;
   private readonly normalizer: TrackNormalizer;
   private readonly defaultBatchSize: number;
   private readonly defaultThrowOnError: boolean;
@@ -83,10 +102,12 @@ export class ImportEngine {
   constructor(config: ImportEngineConfig = {}) {
     this.defaultSource = config.source;
     this.defaultDestination = config.destination;
+    this.defaultCheckpointStore = config.checkpointStore;
     this.normalizer = config.normalizer ?? new DefaultTrackNormalizer();
     this.defaultBatchSize = config.defaultBatchSize ?? DEFAULT_BATCH_SIZE;
     this.defaultThrowOnError = config.throwOnError ?? false;
   }
+
 
   /**
    * Executes an import lifecycle.
@@ -179,7 +200,70 @@ export class ImportEngine {
     }
 
     const startTime = new Date().toISOString();
-    const jobId = randomUUID();
+    const jobId = request.jobId ?? request.importId ?? randomUUID();
+    const checkpointStore = options.checkpointStore ?? this.defaultCheckpointStore;
+
+    // Check if an existing checkpoint exists for this importId
+    let existingCheckpoint = null;
+    if (checkpointStore) {
+      try {
+        existingCheckpoint = await checkpointStore.load(jobId);
+      } catch (err) {
+        console.error(`Failed to load checkpoint for ${jobId}:`, err);
+      }
+    }
+
+    // If checkpoint is already completed and no forced restart requested, return completed state
+    if (existingCheckpoint && existingCheckpoint.status === 'completed' && !request.forceRestart) {
+      const completedJob: ImportJob = {
+        id: existingCheckpoint.importId,
+        playlistId: existingCheckpoint.sourceReference,
+        sourceName: existingCheckpoint.sourceName,
+        destinationName: destination.name,
+        status: 'completed',
+        requestedLimit: request.limit,
+        batchSize,
+        createdAt: existingCheckpoint.createdAt,
+        updatedAt: existingCheckpoint.updatedAt,
+        completedAt: existingCheckpoint.updatedAt,
+        isTruncated: existingCheckpoint.isTruncated,
+        metadata: {
+          resumedFromCompleted: true,
+        },
+      };
+
+      const completedProgress: ImportProgress = {
+        jobId: existingCheckpoint.importId,
+        status: 'completed',
+        totalExpected: existingCheckpoint.processedTracks,
+        totalDiscovered: existingCheckpoint.processedTracks,
+        processedTracks: existingCheckpoint.processedTracks,
+        writtenTracks: existingCheckpoint.writtenTracks,
+        importedTracks: existingCheckpoint.writtenTracks,
+        skippedTracks: existingCheckpoint.skippedTracks,
+        failedTracks: existingCheckpoint.failedTracks,
+        currentBatch: existingCheckpoint.currentBatch,
+        currentPage: existingCheckpoint.currentPage,
+        totalBatches: existingCheckpoint.currentBatch,
+        isTruncated: existingCheckpoint.isTruncated,
+        truncated: existingCheckpoint.isTruncated,
+        percentage: 100,
+      };
+
+      options.onProgress?.(completedProgress);
+
+      return {
+        success: true,
+        job: completedJob,
+        progress: completedProgress,
+        isTruncated: existingCheckpoint.isTruncated,
+      };
+    }
+
+    const isResuming = Boolean(existingCheckpoint && existingCheckpoint.status !== 'completed');
+    const resumeSkipCount = isResuming
+      ? (existingCheckpoint!.processedTracks + existingCheckpoint!.skippedTracks)
+      : 0;
 
     // 2. Create ImportJob
     let currentJob: ImportJob = {
@@ -190,22 +274,38 @@ export class ImportEngine {
       status: 'running',
       requestedLimit: request.limit,
       batchSize,
-      createdAt: startTime,
+      createdAt: isResuming ? existingCheckpoint!.createdAt : startTime,
       updatedAt: startTime,
     };
+
+    let processedTracks = isResuming ? existingCheckpoint!.processedTracks : 0;
+    let writtenTracks = isResuming ? existingCheckpoint!.writtenTracks : 0;
+    let skippedTracks = isResuming ? existingCheckpoint!.skippedTracks : 0;
+    let currentBatchNumber = isResuming ? existingCheckpoint!.currentBatch : 0;
+    let committedProcessedTracks = processedTracks;
+    let committedSkippedTracks = skippedTracks;
+    let committedBatchNumber = currentBatchNumber;
+    let lastProcessedSourceId: string | undefined = existingCheckpoint?.lastProcessedSourceId;
+    let isTruncated = isResuming ? existingCheckpoint!.isTruncated : false;
 
     let progress: ImportProgress = {
       jobId,
       status: 'running',
       totalExpected: undefined,
-      processedTracks: 0,
-      writtenTracks: 0,
+      processedTracks,
+      writtenTracks,
+      importedTracks: writtenTracks,
+      skippedTracks,
       failedTracks: 0,
-      currentBatch: 0,
+      currentBatch: currentBatchNumber,
+      currentPage: currentBatchNumber,
       totalBatches: undefined,
+      isTruncated,
+      truncated: isTruncated,
     };
 
     options.onProgress?.(progress);
+
 
     try {
       // 3. Fetch playlist metadata
@@ -241,27 +341,31 @@ export class ImportEngine {
       options.onProgress?.(progress);
 
       const seenTrackIds = new Set<string>();
-      let processedTracks = 0;
-      let writtenTracks = 0;
-      let skippedTracks = 0;
-      let currentBatchNumber = 0;
       let currentBatch: ImportedTrack[] = [];
-      let isTruncated = Boolean(
-        playlist.totalTracks !== undefined && playlist.totalTracks > effectiveLimit
-      );
+      let discoveredTrackCount = 0;
+
+      if (playlist.totalTracks !== undefined && playlist.totalTracks > effectiveLimit) {
+        isTruncated = true;
+      }
 
       const flushBatch = async (): Promise<void> => {
         if (currentBatch.length === 0) return;
         if (request.signal?.aborted) {
           throw new ImportCancelledError(jobId);
         }
-        currentBatchNumber++;
+        const nextBatchNumber = committedBatchNumber + 1;
         const batchToWrite = currentBatch;
         currentBatch = [];
 
         try {
           const writeResult = await destination.writeTracks(jobId, batchToWrite, request.signal);
           writtenTracks += writeResult.writtenCount;
+          committedProcessedTracks = processedTracks;
+          committedSkippedTracks = skippedTracks;
+          committedBatchNumber = nextBatchNumber;
+          currentBatchNumber = nextBatchNumber;
+          lastProcessedSourceId = batchToWrite[batchToWrite.length - 1]?.sourceId;
+
           progress = {
             ...progress,
             processedTracks,
@@ -278,13 +382,33 @@ export class ImportEngine {
                 : undefined,
           };
           options.onProgress?.(progress);
+
+          // Checkpoint safe batch boundary
+          if (checkpointStore) {
+            await checkpointStore.save({
+              importId: jobId,
+              sourceName: source.name,
+              sourceReference: request.playlistId,
+              processedTracks: committedProcessedTracks,
+              writtenTracks,
+              skippedTracks: committedSkippedTracks,
+              failedTracks: 0,
+              currentBatch: committedBatchNumber,
+              currentPage: committedBatchNumber,
+              lastProcessedSourceId,
+              isTruncated,
+              status: 'running',
+              createdAt: currentJob.createdAt,
+              updatedAt: new Date().toISOString(),
+            });
+          }
         } catch (err) {
           throw new DestinationError(
-            `Destination '${destination.name}' failed to write batch ${currentBatchNumber}`,
+            `Destination '${destination.name}' failed to write batch ${nextBatchNumber}`,
             {
               destinationName: destination.name,
               operation: 'writeTracks',
-              batchIndex: currentBatchNumber,
+              batchIndex: nextBatchNumber,
               batchSize: batchToWrite.length,
             },
             err
@@ -302,6 +426,16 @@ export class ImportEngine {
         for await (const rawTrack of stream) {
           if (request.signal?.aborted) {
             throw new ImportCancelledError(jobId);
+          }
+
+          discoveredTrackCount++;
+
+          // If resuming, skip tracks that were already safely written in prior runs
+          if (isResuming && discoveredTrackCount <= resumeSkipCount) {
+            if (request.deduplicate) {
+              seenTrackIds.add(rawTrack.sourceId);
+            }
+            continue;
           }
 
           if (processedTracks >= effectiveLimit) {
@@ -364,6 +498,15 @@ export class ImportEngine {
 
           const rawTracks = sourceTrackPage.tracks;
           for (let i = 0; i < rawTracks.length; i++) {
+            discoveredTrackCount++;
+
+            if (isResuming && discoveredTrackCount <= resumeSkipCount) {
+              if (request.deduplicate) {
+                seenTrackIds.add(rawTracks[i]!.sourceId);
+              }
+              continue;
+            }
+
             if (processedTracks >= effectiveLimit) {
               isTruncated = true;
               break;
@@ -427,7 +570,6 @@ export class ImportEngine {
             ? initialTotalBatches
             : 0;
 
-
       currentJob = {
         ...currentJob,
         status: 'completed',
@@ -438,6 +580,7 @@ export class ImportEngine {
           truncated: isTruncated,
           totalDiscovered: totalExpected,
           maxImportCeiling: MAX_IMPORT_TRACKS,
+          resumed: isResuming,
         },
       };
 
@@ -460,6 +603,25 @@ export class ImportEngine {
       };
       options.onProgress?.(progress);
 
+      // Checkpoint completion
+      if (checkpointStore) {
+        await checkpointStore.save({
+          importId: jobId,
+          sourceName: source.name,
+          sourceReference: request.playlistId,
+          processedTracks,
+          writtenTracks,
+          skippedTracks,
+          failedTracks: 0,
+          currentBatch: currentBatchNumber,
+          currentPage: currentBatchNumber,
+          isTruncated,
+          status: 'completed',
+          createdAt: currentJob.createdAt,
+          updatedAt: completionTime,
+        });
+      }
+
       return {
         success: true,
         job: currentJob,
@@ -473,7 +635,6 @@ export class ImportEngine {
       try {
         await destination.rollback(jobId, error);
       } catch (rollbackErr) {
-        // Keep original error as primary while logging/recording rollback failure
         console.error(`Rollback failed for job ${jobId}:`, rollbackErr);
       }
 
@@ -492,6 +653,30 @@ export class ImportEngine {
       };
       options.onProgress?.(progress);
 
+      // Checkpoint failure state
+      if (checkpointStore && source) {
+        try {
+          await checkpointStore.save({
+            importId: jobId,
+            sourceName: source.name,
+            sourceReference: request.playlistId,
+            processedTracks: committedProcessedTracks,
+            writtenTracks,
+            skippedTracks: committedSkippedTracks,
+            failedTracks: 0,
+            currentBatch: committedBatchNumber,
+            currentPage: committedBatchNumber,
+            lastProcessedSourceId,
+            isTruncated,
+            status: 'failed',
+            createdAt: currentJob?.createdAt ?? failTime,
+            updatedAt: failTime,
+          });
+        } catch (cpErr) {
+          console.error(`Failed to save failure checkpoint for ${jobId}:`, cpErr);
+        }
+      }
+
       const shouldThrow = options.throwOnError ?? this.defaultThrowOnError;
       if (shouldThrow) {
         throw error;
@@ -504,6 +689,7 @@ export class ImportEngine {
         error,
       };
     }
+
   }
 
   private validateRequest(request: ImportRequest): void {
