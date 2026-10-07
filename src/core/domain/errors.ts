@@ -89,3 +89,11 @@ export class ImportLimitError extends ImportError {
     );
   }
 }
+
+export class ImportCancelledError extends ImportError {
+  readonly code = 'IMPORT_CANCELLED' as const;
+
+  constructor(jobId: string, reason = 'Import operation was cancelled by caller.', details: Record<string, unknown> = {}) {
+    super(reason, { jobId, ...details });
+  }
+}
