@@ -72,10 +72,16 @@ export {
   type InMemorySourceData,
 } from './infrastructure/index.js';
 
-// Spotify Infrastructure (Phase 2)
+// Spotify Infrastructure (Phase 2 & Phase 3)
 export {
   SpotifyMusicSource,
+  SpotifyAuthenticatedSource,
   type SpotifyMusicSourceOptions,
+  type SpotifyAuthenticatedSourceOptions,
+  SpotifyPublicPlaylistSource,
+  type SpotifyPublicPlaylistSourceOptions,
+  type StreamableTrackPage,
+  parseSpotifyPlaylistId,
   SpotifyOAuthService,
   type AuthorizationUrlOptions,
   type SpotifyOAuthOptions,
@@ -97,4 +103,10 @@ export {
   SpotifyConfigError,
   SpotifyAuthError,
   SpotifyApiError,
+  SpotifyPlaylistUrlError,
+  SpotifyUnavailableError,
+  SpotifyMalformedResponseError,
+  SpotifyNetworkError,
+  SpotifyRateLimitError,
 } from './infrastructure/spotify/index.js';
+

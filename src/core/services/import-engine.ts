@@ -21,7 +21,7 @@ import {
   type ImportProgress,
   type ImportedTrack,
 } from '../domain/models.js';
-import type { MusicSource } from '../ports/music-source.js';
+import type { MusicSource, SourceTrackPage } from '../ports/music-source.js';
 import type { MusicDestination } from '../ports/music-destination.js';
 import type { TrackNormalizer } from '../ports/track-normalizer.js';
 import { DefaultTrackNormalizer } from './default-track-normalizer.js';
@@ -31,6 +31,11 @@ export interface ImportRequest {
   readonly limit?: number;
   readonly batchSize?: number;
   readonly signal?: AbortSignal;
+  /**
+   * If true, suppresses duplicate tracks by source identifier.
+   * If false or omitted (default), preserves playlist order and duplicate occurrences.
+   */
+  readonly deduplicate?: boolean;
 }
 
 export interface ImportExecutionOptions {
@@ -53,6 +58,7 @@ export interface ImportResult {
   readonly success: boolean;
   readonly job: ImportJob;
   readonly progress: ImportProgress;
+  readonly isTruncated?: boolean;
   readonly error?: ImportError;
 }
 
@@ -63,7 +69,9 @@ const ImportRequestBaseSchema = z.object({
   }).trim().min(1, 'playlistId cannot be empty'),
   limit: z.number().int('limit must be an integer').positive('limit must be positive').optional(),
   batchSize: z.number().int('batchSize must be an integer').positive('batchSize must be positive').optional(),
+  deduplicate: z.boolean().optional(),
 });
+
 
 export class ImportEngine {
   private readonly defaultSource?: MusicSource;
@@ -200,7 +208,7 @@ export class ImportEngine {
     options.onProgress?.(progress);
 
     try {
-      // 3. Fetch source records through MusicSource
+      // 3. Fetch playlist metadata
       let playlist;
       try {
         playlist = await source.getPlaylist(request.playlistId, request.signal);
@@ -216,81 +224,189 @@ export class ImportEngine {
         throw new ImportCancelledError(jobId);
       }
 
-      let sourceTrackPage;
-      try {
-        sourceTrackPage = await source.getTracks(request.playlistId, {
-          limit: effectiveLimit,
-          signal: request.signal,
-        });
-      } catch (err) {
-        throw new SourceError(
-          `Failed to fetch tracks for playlist '${request.playlistId}' from source '${source.name}'`,
-          { sourceName: source.name, operation: 'getTracks', playlistId: request.playlistId },
-          err
-        );
-      }
-
-      if (request.signal?.aborted) {
-        throw new ImportCancelledError(jobId);
-      }
-
-      // Hard safety enforcement: Never process more than effectiveLimit / MAX_IMPORT_TRACKS
-      const rawTracks = sourceTrackPage.tracks.slice(0, effectiveLimit);
-
-      // 4. Normalize source records into ImportedTrack
-      const normalizedTracks: ImportedTrack[] = [];
-      for (let i = 0; i < rawTracks.length; i++) {
-        const rawTrack = rawTracks[i];
-        const normalized = normalizer.normalize(rawTrack, i);
-        normalizedTracks.push(normalized);
-      }
-
-      const totalTracks = normalizedTracks.length;
-      const batches = this.chunkArray(normalizedTracks, batchSize);
-      const totalBatches = batches.length;
+      const totalExpected = playlist.totalTracks;
+      const initialTotalBatches =
+        totalExpected !== undefined
+          ? totalExpected === 0
+            ? 0
+            : Math.ceil(Math.min(totalExpected, effectiveLimit) / batchSize)
+          : undefined;
 
       progress = {
         ...progress,
-        totalExpected: playlist.totalTracks ?? totalTracks,
-        totalBatches,
+        totalExpected,
+        totalDiscovered: totalExpected,
+        totalBatches: initialTotalBatches,
       };
       options.onProgress?.(progress);
 
-      // 5. Send batches to MusicDestination
-      if (totalBatches === 0) {
-        // Empty playlist handling
-        await destination.commit(jobId);
-      } else {
-        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const seenTrackIds = new Set<string>();
+      let processedTracks = 0;
+      let writtenTracks = 0;
+      let skippedTracks = 0;
+      let currentBatchNumber = 0;
+      let currentBatch: ImportedTrack[] = [];
+      let isTruncated = Boolean(
+        playlist.totalTracks !== undefined && playlist.totalTracks > effectiveLimit
+      );
+
+      const flushBatch = async (): Promise<void> => {
+        if (currentBatch.length === 0) return;
+        if (request.signal?.aborted) {
+          throw new ImportCancelledError(jobId);
+        }
+        currentBatchNumber++;
+        const batchToWrite = currentBatch;
+        currentBatch = [];
+
+        try {
+          const writeResult = await destination.writeTracks(jobId, batchToWrite, request.signal);
+          writtenTracks += writeResult.writtenCount;
+          progress = {
+            ...progress,
+            processedTracks,
+            writtenTracks,
+            importedTracks: writtenTracks,
+            skippedTracks,
+            currentBatch: currentBatchNumber,
+            currentPage: currentBatchNumber,
+            isTruncated,
+            truncated: isTruncated,
+            percentage:
+              totalExpected !== undefined && totalExpected > 0
+                ? Math.min(100, Math.round((processedTracks / Math.min(totalExpected, effectiveLimit)) * 100))
+                : undefined,
+          };
+          options.onProgress?.(progress);
+        } catch (err) {
+          throw new DestinationError(
+            `Destination '${destination.name}' failed to write batch ${currentBatchNumber}`,
+            {
+              destinationName: destination.name,
+              operation: 'writeTracks',
+              batchIndex: currentBatchNumber,
+              batchSize: batchToWrite.length,
+            },
+            err
+          );
+        }
+      };
+
+      // 4. Fetch tracks incrementally (Streaming or Paginated)
+      if (typeof source.getTrackStream === 'function') {
+        const stream = source.getTrackStream(request.playlistId, {
+          limit: effectiveLimit,
+          signal: request.signal,
+        });
+
+        for await (const rawTrack of stream) {
           if (request.signal?.aborted) {
             throw new ImportCancelledError(jobId);
           }
 
-          const batch = batches[batchIndex]!;
-          try {
-            const writeResult = await destination.writeTracks(jobId, batch, request.signal);
+          if (processedTracks >= effectiveLimit) {
+            isTruncated = true;
+            break;
+          }
+
+          if (request.deduplicate && seenTrackIds.has(rawTrack.sourceId)) {
+            skippedTracks++;
             progress = {
               ...progress,
-              processedTracks: progress.processedTracks + batch.length,
-              writtenTracks: progress.writtenTracks + writeResult.writtenCount,
-              currentBatch: batchIndex + 1,
+              skippedTracks,
             };
             options.onProgress?.(progress);
-          } catch (err) {
-            throw new DestinationError(
-              `Destination '${destination.name}' failed to write batch ${batchIndex + 1}`,
-              {
-                destinationName: destination.name,
-                operation: 'writeTracks',
-                batchIndex: batchIndex + 1,
-                batchSize: batch.length,
-              },
-              err
-            );
+            continue;
+          }
+
+          seenTrackIds.add(rawTrack.sourceId);
+          const normalized = normalizer.normalize(rawTrack, processedTracks);
+          currentBatch.push(normalized);
+          processedTracks++;
+
+          if (currentBatch.length >= batchSize) {
+            await flushBatch();
           }
         }
 
-        // Commit written batches
+        if (currentBatch.length > 0) {
+          await flushBatch();
+        }
+      } else {
+        // Fallback: paginated or single page getTracks
+        let cursor: string | undefined = undefined;
+        let hasMore = true;
+
+        while (hasMore && processedTracks < effectiveLimit) {
+          if (request.signal?.aborted) {
+            throw new ImportCancelledError(jobId);
+          }
+
+          const fetchLimit = Math.min(effectiveLimit - processedTracks, effectiveLimit);
+          let sourceTrackPage: SourceTrackPage;
+          try {
+            sourceTrackPage = await source.getTracks(request.playlistId, {
+              limit: fetchLimit,
+              cursor,
+              signal: request.signal,
+            });
+          } catch (err) {
+            throw new SourceError(
+              `Failed to fetch tracks for playlist '${request.playlistId}' from source '${source.name}'`,
+              { sourceName: source.name, operation: 'getTracks', playlistId: request.playlistId },
+              err
+            );
+          }
+
+          if (request.signal?.aborted) {
+            throw new ImportCancelledError(jobId);
+          }
+
+          const rawTracks = sourceTrackPage.tracks;
+          for (let i = 0; i < rawTracks.length; i++) {
+            if (processedTracks >= effectiveLimit) {
+              isTruncated = true;
+              break;
+            }
+
+            const rawTrack = rawTracks[i]!;
+            if (request.deduplicate && seenTrackIds.has(rawTrack.sourceId)) {
+              skippedTracks++;
+              progress = {
+                ...progress,
+                skippedTracks,
+              };
+              options.onProgress?.(progress);
+              continue;
+            }
+
+            seenTrackIds.add(rawTrack.sourceId);
+            const normalized = normalizer.normalize(rawTrack, processedTracks);
+            currentBatch.push(normalized);
+            processedTracks++;
+
+            if (currentBatch.length >= batchSize) {
+              await flushBatch();
+            }
+          }
+
+          cursor = sourceTrackPage.nextCursor;
+          hasMore = sourceTrackPage.hasMore && Boolean(cursor);
+
+          if (sourceTrackPage.total !== undefined && sourceTrackPage.total > effectiveLimit) {
+            isTruncated = true;
+          }
+        }
+
+        if (currentBatch.length > 0) {
+          await flushBatch();
+        }
+      }
+
+      // 5. Commit written batches (or empty playlist commit)
+      if (currentBatchNumber === 0) {
+        await destination.commit(jobId);
+      } else {
         try {
           await destination.commit(jobId);
         } catch (err) {
@@ -304,16 +420,43 @@ export class ImportEngine {
 
       // 6 & 7. Update ImportProgress and finish successfully
       const completionTime = new Date().toISOString();
+      const finalTotalBatches =
+        currentBatchNumber > 0
+          ? currentBatchNumber
+          : initialTotalBatches !== undefined
+            ? initialTotalBatches
+            : 0;
+
+
       currentJob = {
         ...currentJob,
         status: 'completed',
         updatedAt: completionTime,
         completedAt: completionTime,
+        isTruncated,
+        metadata: {
+          truncated: isTruncated,
+          totalDiscovered: totalExpected,
+          maxImportCeiling: MAX_IMPORT_TRACKS,
+        },
       };
 
       progress = {
         ...progress,
         status: 'completed',
+        processedTracks,
+        writtenTracks,
+        importedTracks: writtenTracks,
+        skippedTracks,
+        totalBatches: finalTotalBatches,
+        currentBatch: currentBatchNumber,
+        currentPage: currentBatchNumber,
+        isTruncated,
+        truncated: isTruncated,
+        percentage:
+          totalExpected !== undefined && totalExpected > 0
+            ? Math.min(100, Math.round((processedTracks / Math.min(totalExpected, effectiveLimit)) * 100))
+            : undefined,
       };
       options.onProgress?.(progress);
 
@@ -321,6 +464,7 @@ export class ImportEngine {
         success: true,
         job: currentJob,
         progress,
+        isTruncated,
       };
     } catch (err) {
       const error = this.toImportError(err);
@@ -388,14 +532,6 @@ export class ImportEngine {
     }
   }
 
-  private chunkArray<T>(items: readonly T[], chunkSize: number): T[][] {
-    if (chunkSize <= 0) return [Array.from(items)];
-    const chunks: T[][] = [];
-    for (let i = 0; i < items.length; i += chunkSize) {
-      chunks.push(items.slice(i, i + chunkSize));
-    }
-    return chunks;
-  }
 
   private toImportError(err: unknown): ImportError {
     if (err instanceof ImportError) {
