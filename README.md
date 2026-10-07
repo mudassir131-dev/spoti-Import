@@ -503,16 +503,105 @@ console.log('Import success:', result.success, 'Tracks:', result.progress.writte
 
 ---
 
+## 🔄 Phase 4: Resilient, Resumable & Idempotent Import Pipeline
+
+Phase 4 elevates the Universal Music Import Engine into an enterprise-grade, failure-resilient pipeline capable of withstanding unexpected process crashes, application restarts, network timeouts, and user cancellations.
+
+### 1. Checkpoint Concept (`ImportCheckpoint` & `CheckpointStore`)
+
+Imports are saved at **safe batch boundaries** via the decoupled `CheckpointStore` port:
+
+```typescript
+export interface ImportCheckpoint {
+  readonly importId: string;
+  readonly sourceName: string;
+  readonly sourceReference: string;
+  readonly processedTracks: number;
+  readonly writtenTracks: number;
+  readonly skippedTracks: number;
+  readonly failedTracks: number;
+  readonly currentBatch: number;
+  readonly currentPage: number;
+  readonly lastProcessedSourceId?: string;
+  readonly isTruncated: boolean;
+  readonly status: ImportJobStatus;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+```
+
+- **Generic Port**: `CheckpointStore` defines `save(checkpoint)`, `load(importId)`, and `delete(importId)`. The core domain has zero dependency on specific storage engines.
+- **Reference Implementation**: `InMemoryCheckpointStore` provides an in-memory implementation for tests, offline simulation, and decoupled embedding.
+
+### 2. Resumable Import Engine
+
+When an import fails or is interrupted:
+1. Batches committed prior to the failure boundary remain fully persisted in the destination.
+2. The checkpoint records the exact count of committed tracks.
+3. Upon restarting with the same `jobId`, the pipeline skips already committed tracks, pulls remaining tracks from the source, and continues without duplicate writes.
+4. Preserves original playlist ordering, respects `MAX_IMPORT_TRACKS` (10,000), and maintains truncation flags (`isTruncated`).
+5. Completed imports return immediately without re-fetching or re-writing unless `forceRestart: true` is explicitly passed.
+
+```
+batch 1 → commit → checkpoint
+batch 2 → commit → checkpoint
+...
+batch N → [failure or crash]
+-----------------------------------------
+Resume: skips batches 1..N-1 → writes batch N → completes
+```
+
+### 3. Deterministic Batch Identity & Idempotency
+
+- **Idempotency vs Deduplication**:
+  - `deduplicate: false` (default): Playlist duplicate occurrences (e.g., song A, song B, song A) remain preserved in exact order.
+  - `deduplicate: true`: Duplicates within the playlist are suppressed by source identifier.
+  - **Batch Idempotency**: If the same batch or job is accidentally retried, the destination identifies the batch via `WriteBatchContext` (`batchId: "${jobId}:batch:${index}"`) and prevents duplicate commits.
+- **Job Isolation**: Multiple import jobs importing identical playlists run independently with dedicated batch spaces.
+
+### 4. Cancellation via `AbortSignal`
+
+The import engine accepts a standard `AbortSignal`:
+- Propagates seamlessly from `AbortController` → `ImportEngine` → `MusicSource` & `MusicDestination`.
+- Stops processing immediately without executing unnecessary downstream requests.
+- Committed batches remain valid; uncommitted in-flight batches are rolled back.
+- Checkpoint is preserved in `cancelled` status and can be resumed later.
+
+### 5. Import Lifecycle & Deterministic States
+
+| State | Description |
+|---|---|
+| `pending` | Initial registered state before pipeline execution begins |
+| `running` | Active streaming/fetching, normalizing, writing, and checkpointing |
+| `completed` | All tracks committed and finalized successfully |
+| `failed` | Source, destination, normalizer, or runtime error halted the job |
+| `cancelled` | AbortSignal triggered by caller; safe committed state preserved |
+
+### 6. Phase 4 Known Limitations
+
+- Checkpoint persistence in this phase is generic (`CheckpointStore`); persistent database sinks (PostgreSQL, Room SQLite) will implement this port in future phases.
+- Rate limits from external platforms remain subject to remote API throttle rules.
+
+---
+
+## 🛡️ Security & Zero-Leakage Policy
+
+- **No Secrets in Logs or Exceptions**: Access tokens, client secrets, and sensitive credentials are never output to logs or error objects.
+- **CSRF Protection**: All OAuth authorization requests mandate a caller-verified `state` token.
+- **Deterministic Test Suite**: All tests run against deterministic mock handlers—zero live Spotify credentials or external network dependencies.
+- **Strict Git Boundaries**: Real `.env` files are ignored by git; only `.env.example` with harmless placeholders is committed.
+
+---
+
 ## 🚧 Phase Boundaries & What is Deferred
 
 - ✅ **Phase 1 Completed**: Universal Music Import Engine domain entities, hexagonal ports, `ImportEngine` lifecycle, batching, and in-memory test harnesses.
 - ✅ **Phase 2 Completed**: Isolated Spotify authentication layer, OAuth flow, automated token lifecycle manager, and `SpotifyAuthenticatedSource`.
 - ✅ **Phase 3 Completed**: Credential-Free Public Spotify Playlist Import Mode (`SpotifyPublicPlaylistSource`), URL parser/validator (`parseSpotifyPlaylistId`), memory-safe streaming pagination, hard 10,000-track ceiling (`MAX_IMPORT_TRACKS`), and deterministic duplicate handling.
-- ❌ **Phase 4 (Deferred)**: Persistent storage sinks (Room SQLite, PostgreSQL, Filesystem).
-- ❌ **Phase 5 (Deferred)**: Asynchronous background job queues (Redis, BullMQ).
+- ✅ **Phase 4 Completed**: Resilient, Resumable & Idempotent Import Pipeline (`ImportCheckpoint`, `CheckpointStore`, batch boundaries, `WriteBatchContext`, AbortSignal cancellation, failure recovery, 16 integration scenarios).
+- ❌ **Phase 5 (Deferred)**: Asynchronous background job queues (Redis, BullMQ, distributed workers).
 - ❌ **Phase 6 (Deferred)**: Transport layers (CLI commands, REST API endpoints, Webhooks).
 - ❌ **Out of Scope**: Audio stream scraping, YouTube / Apple Music integration, DRM tampering.
-
 
 ---
 
