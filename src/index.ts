@@ -71,3 +71,30 @@ export {
   InMemoryMusicDestination,
   type InMemorySourceData,
 } from './infrastructure/index.js';
+
+// Spotify Infrastructure (Phase 2)
+export {
+  SpotifyMusicSource,
+  type SpotifyMusicSourceOptions,
+  SpotifyOAuthService,
+  type AuthorizationUrlOptions,
+  type SpotifyOAuthOptions,
+  DEFAULT_SPOTIFY_SCOPES,
+  SpotifyHttpClient,
+  type SpotifyHttpClientOptions,
+  type SpotifyRequestOptions,
+  SpotifyTokenManager,
+  type SpotifyTokenProvider,
+  type SpotifyTokenManagerOptions,
+  createStaticTokenProvider,
+  validateSpotifyConfig,
+  loadSpotifyConfigFromEnv,
+  type SpotifyConfig,
+  type SpotifyToken,
+  isTokenExpired,
+  createSpotifyToken,
+  DEFAULT_SAFETY_WINDOW_SECONDS,
+  SpotifyConfigError,
+  SpotifyAuthError,
+  SpotifyApiError,
+} from './infrastructure/spotify/index.js';

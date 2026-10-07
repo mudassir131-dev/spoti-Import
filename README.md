@@ -135,15 +135,91 @@ npm run typecheck
 npm test
 ```
 
+---
+
+## Spotify Setup Guide (Phase 2)
+
+The Spotify integration provides an infrastructure-level source adapter and authentication layer.
+
+> [!IMPORTANT]
+> Real credentials must **NEVER** be committed to the repository or stored in source code. Credentials belong strictly in environment variables.
+
+### 1. Create a Spotify Developer Application
+1. Log in to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Create a new app and note your **Client ID** and **Client Secret**.
+
+### 2. Configure Redirect URI
+1. In your app settings on the Spotify Developer Dashboard, navigate to **Redirect URIs**.
+2. Add your application callback URI (e.g., `http://localhost:3000/callback`).
+
+### 3. Copy Environment Template
+Copy the example file to a local `.env` file (which is git-ignored):
+
+```bash
+cp .env.example .env
+```
+
+### 4. Fill Credentials Locally
+Open `.env` and fill in your credentials using environment variables:
+
+```env
+SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
+```
+
+### 5. Start the OAuth Flow
+Generate a cryptographically secure CSRF `state` and create the authorization URL using the minimal required scopes (`playlist-read-private`, `playlist-read-collaborative`):
+
+```typescript
+import {
+  loadSpotifyConfigFromEnv,
+  SpotifyOAuthService,
+} from 'universal-music-import-engine';
+
+const config = loadSpotifyConfigFromEnv();
+const oauthService = new SpotifyOAuthService({ config });
+
+// Caller generates and stores state in session/cookie for CSRF validation
+const state = crypto.randomUUID();
+const authUrl = oauthService.createAuthorizationUrl({ state });
+// Redirect user to authUrl
+```
+
+### 6. Handle the Callback & Verify State
+When the user authorizes and Spotify redirects to your callback URL with `code` and `state`:
+
+```typescript
+// Verify that the returned state matches the stored state
+oauthService.verifyState(expectedState, receivedState);
+```
+
+### 7. Exchange Authorization Code for Tokens
+Exchange the one-time code for a token pair (`accessToken` and `refreshToken`):
+
+```typescript
+const token = await oauthService.exchangeCodeForToken(code);
+
+// Pass token to SpotifyTokenManager and SpotifyHttpClient
+const tokenManager = new SpotifyTokenManager({
+  initialToken: token,
+  oauthService,
+});
+
+const client = new SpotifyHttpClient({ tokenProvider: tokenManager });
+const spotifySource = new SpotifyMusicSource(client);
+```
 
 ---
 
-## What is Intentionally NOT Implemented Yet (Phase 1 Boundary)
+## What is Intentionally NOT Implemented Yet (Phase 2 Boundary)
 
-In accordance with Phase 1 design constraints, the following components are explicitly reserved for subsequent phases:
+In accordance with Phase 2 design constraints, the following components are explicitly reserved for subsequent phases:
 
-- ❌ **Spotify Web API & OAuth**: No live Spotify API calls or OAuth flows.
-- ❌ **Real Pagination Loop**: Pagination cursors and page-by-page streaming will be implemented in Phase 3.
-- ❌ **Room / SQLite / PostgreSQL / Redis Persistence**: Database storage adapters are deferred.
-- ❌ **BullMQ / Background Queues**: Background worker orchestration will be built in later phases.
-- ❌ **HTTP / CLI Surface**: Transport layers will be exposed on top of the core engine in future milestones.
+- ❌ **Real Playlist Pagination Loop**: Page-by-page fetching and pagination cursors are deferred to Phase 3.
+- ❌ **10,000-Track Ingestion Engine**: Large-scale streaming pipeline is deferred to Phase 3.
+- ❌ **Persistent Destination Adapters**: Room, SQLite, PostgreSQL, and filesystem sink adapters are deferred to Phase 4.
+- ❌ **Background Queue & Workers**: Redis, BullMQ, and job scheduling are deferred to future milestones.
+- ❌ **CLI & HTTP Servers**: Transport and interface layers will be implemented in later phases.
+- ❌ **Audio Downloading & External Platforms**: No YouTube, Apple Music, or audio stream scraping.
+
