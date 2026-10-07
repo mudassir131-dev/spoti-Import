@@ -18,6 +18,7 @@ import {
 } from '../domain/errors.js';
 import {
   type ImportJob,
+  type ImportJobStatus,
   type ImportProgress,
   type ImportedTrack,
 } from '../domain/models.js';
@@ -128,13 +129,16 @@ export class ImportEngine {
         throw structuredError;
       }
 
-      // Return structured failure result
+      const isCancelled = structuredError instanceof ImportCancelledError || Boolean(request?.signal?.aborted);
+      const status: ImportJobStatus = isCancelled ? 'cancelled' : 'failed';
+
+      // Return structured failure/cancellation result
       const failedJob: ImportJob = {
-        id: randomUUID(),
+        id: request?.jobId ?? request?.importId ?? randomUUID(),
         playlistId: typeof request?.playlistId === 'string' ? request.playlistId : 'unknown',
         sourceName: options.source?.name ?? this.defaultSource?.name ?? 'unknown',
         destinationName: options.destination?.name ?? this.defaultDestination?.name ?? 'unknown',
-        status: 'failed',
+        status,
         requestedLimit: request?.limit,
         batchSize: request?.batchSize ?? this.defaultBatchSize,
         createdAt: new Date().toISOString(),
@@ -145,7 +149,7 @@ export class ImportEngine {
 
       const failedProgress: ImportProgress = {
         jobId: failedJob.id,
-        status: 'failed',
+        status,
         totalExpected: 0,
         processedTracks: 0,
         writtenTracks: 0,
@@ -466,7 +470,16 @@ export class ImportEngine {
           }
 
           seenTrackIds.add(rawTrack.sourceId);
-          const normalized = normalizer.normalize(rawTrack, processedTracks);
+          let normalized: ImportedTrack;
+          try {
+            normalized = normalizer.normalize(rawTrack, processedTracks);
+          } catch (normErr) {
+            throw new ValidationError(
+              `Normalization failed for track '${rawTrack.sourceId}': ${normErr instanceof Error ? normErr.message : String(normErr)}`,
+              { trackId: rawTrack.sourceId, source: source.name },
+              normErr
+            );
+          }
           currentBatch.push(normalized);
           processedTracks++;
 
@@ -536,7 +549,16 @@ export class ImportEngine {
             }
 
             seenTrackIds.add(rawTrack.sourceId);
-            const normalized = normalizer.normalize(rawTrack, processedTracks);
+            let normalized: ImportedTrack;
+            try {
+              normalized = normalizer.normalize(rawTrack, processedTracks);
+            } catch (normErr) {
+              throw new ValidationError(
+                `Normalization failed for track '${rawTrack.sourceId}': ${normErr instanceof Error ? normErr.message : String(normErr)}`,
+                { trackId: rawTrack.sourceId, source: source.name },
+                normErr
+              );
+            }
             currentBatch.push(normalized);
             processedTracks++;
 
@@ -643,29 +665,32 @@ export class ImportEngine {
     } catch (err) {
       const error = this.toImportError(err);
 
-      // Rollback destination changes when an error occurs
+      // Rollback uncommitted destination changes when an error or cancellation occurs
       try {
         await destination.rollback(jobId, error);
       } catch (rollbackErr) {
         console.error(`Rollback failed for job ${jobId}:`, rollbackErr);
       }
 
-      const failTime = new Date().toISOString();
+      const isCancelled = error instanceof ImportCancelledError || Boolean(request.signal?.aborted);
+      const finalStatus: ImportJobStatus = isCancelled ? 'cancelled' : 'failed';
+
+      const finishTime = new Date().toISOString();
       currentJob = {
         ...currentJob,
-        status: 'failed',
-        updatedAt: failTime,
-        completedAt: failTime,
+        status: finalStatus,
+        updatedAt: finishTime,
+        completedAt: finishTime,
         error: error.toJSON(),
       };
 
       progress = {
         ...progress,
-        status: 'failed',
+        status: finalStatus,
       };
       options.onProgress?.(progress);
 
-      // Checkpoint failure state
+      // Checkpoint state (cancelled or failed, preserving committed boundary)
       if (checkpointStore && source) {
         try {
           await checkpointStore.save({
@@ -680,12 +705,12 @@ export class ImportEngine {
             currentPage: committedBatchNumber,
             lastProcessedSourceId,
             isTruncated,
-            status: 'failed',
-            createdAt: currentJob?.createdAt ?? failTime,
-            updatedAt: failTime,
+            status: finalStatus,
+            createdAt: currentJob?.createdAt ?? finishTime,
+            updatedAt: finishTime,
           });
         } catch (cpErr) {
-          console.error(`Failed to save failure checkpoint for ${jobId}:`, cpErr);
+          console.error(`Failed to save checkpoint for ${jobId}:`, cpErr);
         }
       }
 
@@ -734,6 +759,14 @@ export class ImportEngine {
   private toImportError(err: unknown): ImportError {
     if (err instanceof ImportError) {
       return err;
+    }
+    if (
+      err instanceof Error &&
+      (err.name === 'AbortError' || err.message.toLowerCase().includes('abort'))
+    ) {
+      return new ImportCancelledError('aborted', 'Import operation aborted by signal', {
+        cause: err.message,
+      });
     }
     const message = err instanceof Error ? err.message : String(err);
     return new ValidationError(`Unexpected execution error: ${message}`, {}, err);
