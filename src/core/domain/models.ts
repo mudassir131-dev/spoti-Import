@@ -93,6 +93,8 @@ export interface ImportJob {
   readonly updatedAt: string;
   readonly completedAt?: string;
   readonly error?: ImportErrorPayload;
+  readonly isTruncated?: boolean;
+  readonly metadata?: Record<string, unknown>;
 }
 
 /**
@@ -102,9 +104,17 @@ export interface ImportProgress {
   readonly jobId: string;
   readonly status: ImportJobStatus;
   readonly totalExpected?: number;
+  readonly totalDiscovered?: number;
   readonly processedTracks: number;
   readonly writtenTracks: number;
+  readonly importedTracks?: number;
+  readonly skippedTracks?: number;
   readonly failedTracks: number;
   readonly currentBatch: number;
+  readonly currentPage?: number;
   readonly totalBatches?: number;
+  readonly isTruncated?: boolean;
+  readonly truncated?: boolean;
+  readonly percentage?: number;
 }
+
