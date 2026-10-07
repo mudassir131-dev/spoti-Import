@@ -51,6 +51,9 @@ export class ValidationError extends ImportError {
   }
 }
 
+/**
+ * Raised when a MusicSource adapter fails during data retrieval or connection.
+ */
 export class SourceError extends ImportError {
   readonly code = 'SOURCE_ERROR' as const;
 
@@ -63,6 +66,9 @@ export class SourceError extends ImportError {
   }
 }
 
+/**
+ * Raised when a MusicDestination adapter fails during writing, committing, or rolling back.
+ */
 export class DestinationError extends ImportError {
   readonly code = 'DESTINATION_ERROR' as const;
 
@@ -75,6 +81,9 @@ export class DestinationError extends ImportError {
   }
 }
 
+/**
+ * Raised when an import request exceeds the safety ceiling of tracks.
+ */
 export class ImportLimitError extends ImportError {
   readonly code = 'IMPORT_LIMIT_EXCEEDED' as const;
 
@@ -90,6 +99,9 @@ export class ImportLimitError extends ImportError {
   }
 }
 
+/**
+ * Raised when an in-flight import job is aborted or cancelled via cancellation signal.
+ */
 export class ImportCancelledError extends ImportError {
   readonly code = 'IMPORT_CANCELLED' as const;
 
