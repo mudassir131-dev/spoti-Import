@@ -27,6 +27,7 @@ export {
   ImportedTrackSchema,
   ImportedPlaylistSchema,
   ImportJobStatusSchema,
+  ImportCheckpointSchema,
   type ImportedArtist,
   type ImportedAlbum,
   type ImportedTrack,
@@ -34,6 +35,7 @@ export {
   type ImportJob,
   type ImportProgress,
   type ImportJobStatus,
+  type ImportCheckpoint,
 } from './core/domain/models.js';
 
 // Ports (interfaces)
@@ -52,6 +54,10 @@ export type {
   TrackNormalizer,
 } from './core/ports/track-normalizer.js';
 
+export type {
+  CheckpointStore,
+} from './core/ports/checkpoint-store.js';
+
 // Services
 export {
   ImportEngine,
@@ -69,6 +75,7 @@ export {
 export {
   InMemoryMusicSource,
   InMemoryMusicDestination,
+  InMemoryCheckpointStore,
   type InMemorySourceData,
 } from './infrastructure/index.js';
 

@@ -118,3 +118,27 @@ export interface ImportProgress {
   readonly percentage?: number;
 }
 
+/**
+ * Import Checkpoint domain model
+ * Represents the persistent state required to resume an interrupted import safely.
+ */
+export const ImportCheckpointSchema = z.object({
+  importId: z.string().min(1, 'importId is required'),
+  sourceName: z.string().min(1, 'sourceName is required'),
+  sourceReference: z.string().min(1, 'sourceReference is required'),
+  processedTracks: z.number().int().nonnegative(),
+  writtenTracks: z.number().int().nonnegative(),
+  skippedTracks: z.number().int().nonnegative().default(0),
+  failedTracks: z.number().int().nonnegative().default(0),
+  currentBatch: z.number().int().nonnegative().default(0),
+  currentPage: z.number().int().nonnegative().default(0),
+  lastProcessedSourceId: z.string().optional(),
+  isTruncated: z.boolean().default(false),
+  status: ImportJobStatusSchema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  metadata: z.record(z.unknown()).optional(),
+});
+export type ImportCheckpoint = z.infer<typeof ImportCheckpointSchema>;
+
+
