@@ -12,7 +12,7 @@
 <p align="center">
   <a href="#-architecture--deep-dive"><img src="https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20Ports%20%26%20Adapters-8B5CF6?style=for-the-badge&logo=blueprint" alt="Hexagonal Architecture"/></a>
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/TypeScript-Strict%20ESM-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript Strict"/></a>
-  <a href="#-verification--testing"><img src="https://img.shields.io/badge/Tests-48%20Passed%20%7C%20Vitest-10B981?style=for-the-badge&logo=vitest" alt="Vitest Passed"/></a>
+  <a href="#-verification--testing"><img src="https://img.shields.io/badge/Tests-76%20Passed%20%7C%20Vitest-10B981?style=for-the-badge&logo=vitest" alt="Vitest Passed"/></a>
   <a href="#-security--credentials"><img src="https://img.shields.io/badge/Security-Zero%20Secrets%20in%20Repo-EF4444?style=for-the-badge&logo=security" alt="Security"/></a>
   <a href="#-license"><img src="https://img.shields.io/badge/License-GNU%20GPL%20v3-F59E0B?style=for-the-badge&logo=gnu" alt="GNU GPL v3 License"/></a>
 </p>
@@ -498,20 +498,21 @@ console.log('Import success:', result.success, 'Tracks:', result.progress.writte
 
 - **No Secrets in Logs or Exceptions**: Access tokens and client secrets are never printed in logs or included in `SpotifyApiError` or `SpotifyAuthError` messages.
 - **CSRF Protection**: All OAuth authorization requests mandate a caller-verified `state` token.
-- **Deterministic Test Suite**: All 48 unit tests run against deterministic mock handlers—no live network requests are executed during tests.
+- **Deterministic Test Suite**: All 76 unit tests run against deterministic mock handlers—no live network requests are executed during tests.
 - **Strict Git Boundaries**: Real `.env` files are ignored by git; only `.env.example` with harmless placeholders is committed.
 
 ---
 
 ## 🚧 Phase Boundaries & What is Deferred
 
-In accordance with Phase 2 boundaries, the following capabilities are explicitly reserved for subsequent phases:
-
-- ❌ **Phase 3**: Real playlist pagination loops & 10,000-track streaming ingestion.
-- ❌ **Phase 4**: Persistent storage sinks (Room SQLite, PostgreSQL, Filesystem).
-- ❌ **Phase 5**: Asynchronous background job queues (Redis, BullMQ).
-- ❌ **Phase 6**: Transport layers (CLI commands, REST API endpoints, Webhooks).
+- ✅ **Phase 1 Completed**: Universal Music Import Engine domain entities, hexagonal ports, `ImportEngine` lifecycle, batching, and in-memory test harnesses.
+- ✅ **Phase 2 Completed**: Isolated Spotify authentication layer, OAuth flow, automated token lifecycle manager, and `SpotifyAuthenticatedSource`.
+- ✅ **Phase 3 Completed**: Credential-Free Public Spotify Playlist Import Mode (`SpotifyPublicPlaylistSource`), URL parser/validator (`parseSpotifyPlaylistId`), memory-safe streaming pagination, hard 10,000-track ceiling (`MAX_IMPORT_TRACKS`), and deterministic duplicate handling.
+- ❌ **Phase 4 (Deferred)**: Persistent storage sinks (Room SQLite, PostgreSQL, Filesystem).
+- ❌ **Phase 5 (Deferred)**: Asynchronous background job queues (Redis, BullMQ).
+- ❌ **Phase 6 (Deferred)**: Transport layers (CLI commands, REST API endpoints, Webhooks).
 - ❌ **Out of Scope**: Audio stream scraping, YouTube / Apple Music integration, DRM tampering.
+
 
 ---
 
