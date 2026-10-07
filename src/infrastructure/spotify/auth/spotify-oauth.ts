@@ -5,3 +5,9 @@ export const DEFAULT_SPOTIFY_SCOPES: readonly string[] = Object.freeze([
   'playlist-read-private',
   'playlist-read-collaborative',
 ]);
+
+export interface AuthorizationUrlOptions {
+  readonly state: string;
+  readonly scopes?: readonly string[];
+  readonly showDialog?: boolean;
+}
