@@ -14,8 +14,23 @@
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/TypeScript-Strict%20ESM-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript Strict"/></a>
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/Tests-48%20Passed%20%7C%20Vitest-10B981?style=for-the-badge&logo=vitest" alt="Vitest Passed"/></a>
   <a href="#-security--credentials"><img src="https://img.shields.io/badge/Security-Zero%20Secrets%20in%20Repo-EF4444?style=for-the-badge&logo=security" alt="Security"/></a>
-  <a href="#license"><img src="https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge" alt="License"/></a>
+  <a href="#-license"><img src="https://img.shields.io/badge/License-GNU%20GPL%20v2-F59E0B?style=for-the-badge&logo=gnu" alt="GNU GPL v2 License"/></a>
 </p>
+
+---
+
+## ⚠️ Disclaimer & Notice of Educational Use
+
+> [!IMPORTANT]
+> **FOR EDUCATIONAL, RESEARCH, AND PERSONAL USE ONLY**
+>
+> This repository, **Spoti Import (Universal Music Import Engine)**, is an open-source software project distributed strictly for **educational, learning, and personal non-commercial use**.
+>
+> - **Educational Purpose**: Built as an architectural study in Hexagonal Architecture (Ports & Adapters), strict TypeScript domain modeling, and robust API lifecycle management.
+> - **Non-Commercial**: This software is not intended for commercial exploitation or for circumventing licensing terms.
+> - **Independent Project**: This project is not affiliated, sponsored, associated, or endorsed by Spotify AB, Spotify Technology S.A., or any related entities. "Spotify" and associated trademarks belong to their respective owners.
+> - **API Terms of Service**: Users must supply their own developer credentials from the Spotify Developer Dashboard and are solely responsible for adhering to the [Spotify Developer Terms of Service](https://developer.spotify.com/terms) and their local copyright and data laws.
+> - **No Audio Piracy**: This engine only imports metadata (playlist titles, track metadata, artist names, album art URLs, and ISRC codes) for personal library organization. It does not download audio streams, rip music files, or bypass DRM protections.
 
 ---
 
@@ -502,4 +517,6 @@ In accordance with Phase 2 boundaries, the following capabilities are explicitly
 
 ## 📜 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is open-source software licensed under the **GNU General Public License Version 2 (GPL-2.0)** - see the [LICENSE](LICENSE) file for the full text of the license terms and conditions.
+
+Under the GNU GPL, you are free to inspect, run, share, and modify the code, provided that any derivative works also remain open-source and free under the same license terms.

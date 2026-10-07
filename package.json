@@ -18,7 +18,7 @@
     "hexagonal-architecture",
     "typescript"
   ],
-  "license": "MIT",
+  "license": "GPL-2.0-or-later",
   "dependencies": {
     "zod": "^3.24.2"
   },
