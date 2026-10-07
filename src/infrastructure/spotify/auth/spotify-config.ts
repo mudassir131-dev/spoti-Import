@@ -17,3 +17,16 @@ export const SpotifyConfigSchema = z.object({
 });
 
 export type SpotifyConfig = z.infer<typeof SpotifyConfigSchema>;
+
+export function validateSpotifyConfig(raw: unknown): SpotifyConfig {
+  const parseResult = SpotifyConfigSchema.safeParse(raw);
+  if (!parseResult.success) {
+    const errorDetails = parseResult.error.issues.map((issue) => ({
+      path: issue.path.join('.'),
+      message: issue.message,
+    }));
+    const summary = errorDetails.map((e) => `${e.path || 'config'}: ${e.message}`).join('; ');
+    throw new SpotifyConfigError(`Invalid Spotify configuration: ${summary}`, { issues: errorDetails });
+  }
+  return parseResult.data;
+}
