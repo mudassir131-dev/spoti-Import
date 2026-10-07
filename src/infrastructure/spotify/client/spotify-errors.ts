@@ -21,3 +21,33 @@ export class SpotifyAuthError extends Error {
     this.errorDescription = options.errorDescription;
   }
 }
+
+export class SpotifyApiError extends Error {
+  readonly code = 'SPOTIFY_API_ERROR' as const;
+  readonly status: number;
+  readonly endpoint: string;
+  readonly method: string;
+  readonly retryable: boolean;
+  readonly retryAfterSeconds?: number;
+  readonly spotifyErrorCode?: string;
+
+  constructor(options: {
+    message: string;
+    status: number;
+    endpoint: string;
+    method: string;
+    retryable?: boolean;
+    retryAfterSeconds?: number;
+    spotifyErrorCode?: string;
+    cause?: unknown;
+  }) {
+    super(options.message, options.cause !== undefined ? { cause: options.cause } : undefined);
+    this.name = 'SpotifyApiError';
+    this.status = options.status;
+    this.endpoint = options.endpoint;
+    this.method = options.method.toUpperCase();
+    this.spotifyErrorCode = options.spotifyErrorCode;
+    this.retryAfterSeconds = options.retryAfterSeconds;
+    this.retryable = options.retryable ?? (options.status === 429 || (options.status >= 500 && options.status < 600));
+  }
+}
