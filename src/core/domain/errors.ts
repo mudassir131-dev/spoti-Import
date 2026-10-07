@@ -62,3 +62,15 @@ export class SourceError extends ImportError {
     super(message, details, cause);
   }
 }
+
+export class DestinationError extends ImportError {
+  readonly code = 'DESTINATION_ERROR' as const;
+
+  constructor(
+    message: string,
+    details: { destinationName: string; operation: string; [key: string]: unknown },
+    cause?: unknown
+  ) {
+    super(message, details, cause);
+  }
+}
