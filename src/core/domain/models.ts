@@ -1,6 +1,14 @@
+/**
+ * Universal Music Import Engine - Core Domain Models & Schemas
+ * Defines typed entities and runtime Zod validation schemas.
+ */
+
 import { z } from 'zod';
 import type { ImportErrorPayload } from './errors.js';
 
+/**
+ * Artist domain model
+ */
 export const ImportedArtistSchema = z.object({
   name: z.string().min(1, 'Artist name cannot be empty'),
   sourceId: z.string().optional(),
@@ -9,6 +17,9 @@ export const ImportedArtistSchema = z.object({
 });
 export type ImportedArtist = z.infer<typeof ImportedArtistSchema>;
 
+/**
+ * Album domain model
+ */
 export const ImportedAlbumSchema = z.object({
   title: z.string().min(1, 'Album title cannot be empty'),
   sourceId: z.string().optional(),
@@ -20,6 +31,9 @@ export const ImportedAlbumSchema = z.object({
 });
 export type ImportedAlbum = z.infer<typeof ImportedAlbumSchema>;
 
+/**
+ * Track domain model
+ */
 export const ImportedTrackSchema = z.object({
   source: z.string().min(1, 'Source identifier is required'),
   sourceId: z.string().min(1, 'Source ID is required'),
@@ -37,6 +51,9 @@ export const ImportedTrackSchema = z.object({
 });
 export type ImportedTrack = z.infer<typeof ImportedTrackSchema>;
 
+/**
+ * Playlist domain model
+ */
 export const ImportedPlaylistSchema = z.object({
   source: z.string().min(1, 'Source identifier is required'),
   sourceId: z.string().min(1, 'Source ID is required'),
@@ -49,6 +66,9 @@ export const ImportedPlaylistSchema = z.object({
 });
 export type ImportedPlaylist = z.infer<typeof ImportedPlaylistSchema>;
 
+/**
+ * Job status enumeration
+ */
 export const ImportJobStatusSchema = z.enum([
   'pending',
   'running',
@@ -58,6 +78,9 @@ export const ImportJobStatusSchema = z.enum([
 ]);
 export type ImportJobStatus = z.infer<typeof ImportJobStatusSchema>;
 
+/**
+ * Import Job model
+ */
 export interface ImportJob {
   readonly id: string;
   readonly playlistId: string;
@@ -70,4 +93,18 @@ export interface ImportJob {
   readonly updatedAt: string;
   readonly completedAt?: string;
   readonly error?: ImportErrorPayload;
+}
+
+/**
+ * Import Progress model
+ */
+export interface ImportProgress {
+  readonly jobId: string;
+  readonly status: ImportJobStatus;
+  readonly totalExpected?: number;
+  readonly processedTracks: number;
+  readonly writtenTracks: number;
+  readonly failedTracks: number;
+  readonly currentBatch: number;
+  readonly totalBatches?: number;
 }
