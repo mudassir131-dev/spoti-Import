@@ -1,0 +1,222 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <defs>
+    <!-- Background Radial Glow -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4F46E5" stop-opacity="0.3" />
+      <stop offset="40%" stop-color="#7C3AED" stop-opacity="0.15" />
+      <stop offset="80%" stop-color="#EC4899" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Top Ribbon Gradient: Amber -> Coral -> Neon Violet -> Electric Blue -->
+    <linearGradient id="topRibbonGrad" x1="15%" y1="20%" x2="85%" y2="50%">
+      <stop offset="0%" stop-color="#FFD166" />
+      <stop offset="25%" stop-color="#FF7A00" />
+      <stop offset="50%" stop-color="#E040FB" />
+      <stop offset="75%" stop-color="#5B51D8" />
+      <stop offset="100%" stop-color="#2575FC" />
+    </linearGradient>
+
+    <!-- Top Ribbon Highlight / Rim Lighting -->
+    <linearGradient id="rimLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE082" stop-opacity="0.9" />
+      <stop offset="30%" stop-color="#FFFFFF" stop-opacity="0.4" />
+      <stop offset="70%" stop-color="#8B5CF6" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#00F5D4" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Middle S-Curve Underfold Gradient -->
+    <linearGradient id="middleFoldGrad" x1="75%" y1="25%" x2="25%" y2="75%">
+      <stop offset="0%" stop-color="#2575FC" />
+      <stop offset="35%" stop-color="#4C1D95" />
+      <stop offset="70%" stop-color="#2E0854" />
+      <stop offset="100%" stop-color="#0F051D" />
+    </linearGradient>
+
+    <!-- Lower Loop Base & Shell Gradient -->
+    <linearGradient id="lowerShellGrad" x1="10%" y1="50%" x2="70%" y2="90%">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.9" />
+      <stop offset="30%" stop-color="#311042" stop-opacity="0.8" />
+      <stop offset="60%" stop-color="#4C1D95" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#FF6B6B" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Outer Rim Accent Gradient -->
+    <linearGradient id="outerHexRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9F1C" />
+      <stop offset="30%" stop-color="#F72585" />
+      <stop offset="60%" stop-color="#7209B7" />
+      <stop offset="85%" stop-color="#3A0CA3" />
+      <stop offset="100%" stop-color="#4CC9F0" />
+    </linearGradient>
+
+    <!-- Waves Gradient (Iconic Spotify-style curved acoustic waves) -->
+    <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#72EEF6" />
+      <stop offset="50%" stop-color="#4F75FE" />
+      <stop offset="100%" stop-color="#A855F7" />
+    </linearGradient>
+
+    <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#55A6FE" />
+      <stop offset="50%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#D946EF" />
+    </linearGradient>
+
+    <linearGradient id="waveGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4361EE" />
+      <stop offset="50%" stop-color="#9333EA" />
+      <stop offset="100%" stop-color="#F43F5E" />
+    </linearGradient>
+
+    <!-- Arrow Gradient: Sunrise Gold into Sunset Magenta -->
+    <linearGradient id="arrowGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFD166" />
+      <stop offset="25%" stop-color="#FF8E3C" />
+      <stop offset="60%" stop-color="#D946EF" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+
+    <linearGradient id="arrowHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3BF" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#FF5722" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Neon Drop Shadow Filter -->
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur1" />
+      <feGaussianBlur stdDeviation="32" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Inner Soft Ambient Shadow -->
+    <filter id="softInnerShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="4" dy="12" stdDeviation="18" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- Deep Cosmic Black Background with Radial Neon Aura -->
+  <rect width="800" height="800" rx="160" fill="#0A0B10" />
+  <circle cx="400" cy="400" r="380" fill="url(#bgGlow)" />
+
+  <!-- Outer Glassmorphic Geometric Hexagon Frame Base -->
+  <path d="M 390 115 
+           C 425 115, 605 210, 625 240
+           C 645 270, 650 490, 630 525
+           C 610 560, 430 670, 395 670
+           C 360 670, 185 570, 168 535
+           C 150 500, 150 280, 172 245
+           C 195 210, 355 115, 390 115 Z"
+        fill="url(#lowerShellGrad)"
+        stroke="url(#outerHexRim)"
+        stroke-width="3"
+        stroke-opacity="0.4"
+        filter="url(#softInnerShadow)" />
+
+  <!-- Backfolded Dark Cavity Depth -->
+  <path d="M 230 290
+           C 310 220, 500 240, 560 320
+           C 600 375, 590 460, 520 515
+           C 470 555, 380 585, 320 600
+           C 270 590, 210 550, 195 490
+           C 185 410, 195 340, 230 290 Z"
+        fill="url(#middleFoldGrad)" />
+
+  <!-- Spotify Sound Waves (Three iconic rounded glowing sonic bars) -->
+  <g id="soundWaves" filter="url(#neonGlow)">
+    <!-- Wave 1 (Top Wave: Longest curve) -->
+    <path d="M 205 385 
+             C 270 380, 375 410, 420 460 
+             C 432 473, 418 492, 400 488
+             C 360 445, 265 418, 202 422
+             C 185 423, 188 387, 205 385 Z"
+          fill="url(#waveGrad1)" />
+
+    <!-- Wave 2 (Middle Wave: Medium curve) -->
+    <path d="M 205 450 
+             C 260 448, 345 475, 385 520 
+             C 396 533, 382 550, 365 547
+             C 330 510, 255 486, 202 487
+             C 186 488, 189 452, 205 450 Z"
+          fill="url(#waveGrad2)" />
+
+    <!-- Wave 3 (Bottom Wave: Shortest curve) -->
+    <path d="M 208 518 
+             C 255 516, 315 540, 348 578 
+             C 359 591, 345 607, 330 603
+             C 300 572, 248 552, 205 554
+             C 190 554, 193 520, 208 518 Z"
+          fill="url(#waveGrad3)" />
+  </g>
+
+  <!-- Main Sweeping 3D S-Ribbon (Upper Loop + Fold) -->
+  <g id="mainRibbon" filter="url(#neonGlow)">
+    <!-- Upper Sweeping Band -->
+    <path d="M 190 300
+             C 175 240, 225 180, 290 145
+             C 365 105, 480 120, 550 175
+             C 615 225, 630 300, 595 365
+             C 555 435, 465 460, 385 435
+             C 330 415, 275 365, 220 330
+             C 198 316, 192 308, 190 300 Z"
+          fill="url(#topRibbonGrad)" />
+
+    <!-- Top Gloss Highlight Rim -->
+    <path d="M 290 145
+             C 365 105, 480 120, 550 175
+             C 605 220, 625 280, 605 340"
+          fill="none"
+          stroke="url(#rimLight)"
+          stroke-width="5"
+          stroke-linecap="round" />
+
+    <!-- Under-fold Shading for 3D Twist -->
+    <path d="M 220 330
+             C 285 375, 360 425, 435 440
+             C 490 450, 545 425, 575 385
+             C 560 440, 490 495, 410 495
+             C 335 495, 260 445, 205 375
+             C 195 345, 205 335, 220 330 Z"
+          fill="url(#middleFoldGrad)"
+          opacity="0.9" />
+
+    <!-- Lower Wrap Around Band Edge -->
+    <path d="M 195 490
+             C 175 420, 185 330, 230 270
+             C 210 320, 200 400, 215 480
+             C 235 550, 290 610, 360 635
+             C 430 660, 510 645, 560 600
+             C 500 635, 420 645, 350 620
+             C 280 595, 220 545, 195 490 Z"
+          fill="url(#outerHexRim)" />
+  </g>
+
+  <!-- Lower Right Downward Ingestion / Import Arrow -->
+  <g id="importArrow" filter="url(#neonGlow)">
+    <!-- Arrow Body & Head (Ingesting / Downward Movement) -->
+    <path d="M 465 470
+             C 505 480, 540 505, 555 530
+             L 555 570
+             L 640 570
+             L 575 660
+             C 568 670, 552 670, 545 660
+             L 480 570
+             L 520 570
+             L 520 520
+             C 500 505, 480 490, 465 470 Z"
+          fill="url(#arrowGrad)"
+          stroke="url(#arrowHighlight)"
+          stroke-width="3" />
+
+    <!-- Arrow Specular Core Highlight -->
+    <path d="M 545 575 L 560 630"
+          stroke="#FFF"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.6" />
+  </g>
+</svg>

@@ -1,121 +1,365 @@
-# Universal Music Import Engine
+<p align="center">
+  <img src="assets/logo.svg" alt="Spoti Import Logo" width="230"/>
+</p>
 
-A reusable, production-grade Universal Music Import Engine built using **Ports & Adapters (Hexagonal Architecture)** in strict TypeScript and Node.js LTS (ESM).
+<h1 align="center">Spoti Import</h1>
 
-The engine is platform-agnostic: it orchestrates the ingestion, validation, normalization, batching, and persistence lifecycle across arbitrary music sources and storage sinks without coupling to specific platforms.
+<p align="center">
+  <strong>Universal Music Import Engine</strong><br/>
+  <em>A production-grade, extensible, platform-agnostic music ingestion engine built with strict Hexagonal Architecture (Ports &amp; Adapters) in TypeScript and Node.js LTS.</em>
+</p>
 
----
-
-## Architecture: Ports & Adapters (Hexagonal Architecture)
-
-The core domain and engine operate purely against abstract interfaces (**ports**). Real-world platforms (Spotify, Apple Music, SQLite/Room, PostgreSQL, Redis, HTTP servers, CLI tools) reside on the outer perimeter as **adapters**.
-
-```
-                         +-----------------------------+
-                         |      External Clients       |
-                         +--------------+--------------+
-                                        |
-                                        v
-+------------------+         +--------------------+         +-----------------------+
-|  Music Source    |  ====>  |    ImportEngine    |  ====>  |   Music Destination   |
-| (Secondary Port) |         |  (Core Domain &    |         |   (Secondary Port)    |
-|                  |         |   Application)     |         |                       |
-+------------------+         +--------------------+         +-----------------------+
-        ^                                                               ^
-        |                                                               |
-+-------+--------------+                                        +-------+---------------+
-| Infrastructure       |                                        | Infrastructure        |
-| Adapters:            |                                        | Adapters:             |
-| - InMemorySource     |                                        | - InMemoryDestination |
-| - (Spotify in Ph.2)  |                                        | - (Room in Ph.4)      |
-+----------------------+                                        +-----------------------+
-```
-
-### Dependency Direction
-
-```
-Infrastructure Adapters  ───▶  Core Ports  ◀───  Core Engine / Domain
-```
-
-- **Inward Dependency Rule**: All dependencies point strictly inward toward the core domain.
-- **Pure Core**: The core imports no infrastructure code, external platform SDKs, database drivers, or transport layers.
-- **Port Contracts**: Infrastructure adapters depend directly on core ports and domain models, never the reverse.
+<p align="center">
+  <a href="#-architecture--deep-dive"><img src="https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20Ports%20%26%20Adapters-8B5CF6?style=for-the-badge&logo=blueprint" alt="Hexagonal Architecture"/></a>
+  <a href="#-verification--testing"><img src="https://img.shields.io/badge/TypeScript-Strict%20ESM-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript Strict"/></a>
+  <a href="#-verification--testing"><img src="https://img.shields.io/badge/Tests-48%20Passed%20%7C%20Vitest-10B981?style=for-the-badge&logo=vitest" alt="Vitest Passed"/></a>
+  <a href="#-security--credentials"><img src="https://img.shields.io/badge/Security-Zero%20Secrets%20in%20Repo-EF4444?style=for-the-badge&logo=security" alt="Security"/></a>
+  <a href="#license"><img src="https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge" alt="License"/></a>
+</p>
 
 ---
 
-## Directory Structure
+## 🏛️ Deeply Described Architecture
+
+**Spoti Import** is designed around **Ports & Adapters (Hexagonal Architecture)**. The primary objective is absolute isolation between business domain rules and infrastructure technologies.
+
+The core engine operates entirely on universal abstractions (**ports**). Real-world third-party platforms (Spotify, Apple Music, Tidal), persistence engines (Room SQLite, PostgreSQL, Memory), cache layers (Redis, BullMQ), and transport interfaces (HTTP, CLI) reside exclusively on the perimeter as interchangeable **adapters**.
+
+---
+
+### Figure 1: Hexagonal Architecture & Inward Dependency Boundary
+
+The following figure depicts the hexagonal boundary, separating core domain logic from outward-facing secondary adapters:
+
+```mermaid
+graph TD
+    subgraph External_World["🌍 External World & Transports"]
+        UI["CLI / HTTP Server / Mobile App"]
+    end
+
+    subgraph Hexagonal_Core["📦 CORE APPLICATION (Decoupled & Pure)"]
+        subgraph Ports_In["Driving (Primary) Ports"]
+            EngineAPI["ImportEngine Lifecycle Service"]
+        end
+
+        subgraph Domain_Core["Domain Entities & Rules"]
+            Track["ImportedTrack"]
+            Playlist["ImportedPlaylist"]
+            Job["ImportJob"]
+            Progress["ImportProgress"]
+            Errors["Typed ImportError Hierarchy"]
+            Safety["MAX_IMPORT_TRACKS = 10,000<br/>DEFAULT_BATCH_SIZE = 100"]
+        end
+
+        subgraph Ports_Out["Driven (Secondary) Ports"]
+            SourcePort["MusicSource Port<br/>(getPlaylist, getTracks)"]
+            DestPort["MusicDestination Port<br/>(writeTracks, commit, rollback)"]
+            NormPort["TrackNormalizer Port"]
+        end
+    end
+
+    subgraph Infrastructure_Adapters["🔌 INFRASTRUCTURE ADAPTERS (Outer Layer)"]
+        subgraph Source_Adapters["Source Adapters"]
+            SpotifyAdapter["SpotifyMusicSource (Phase 2)"]
+            SpotifyClient["SpotifyHttpClient (Native Fetch)"]
+            SpotifyTokenMgr["SpotifyTokenManager (Lazy Refresh)"]
+            SpotifyOAuth["SpotifyOAuthService (CSRF State)"]
+            InMemorySrc["InMemoryMusicSource (Testing)"]
+        end
+
+        subgraph Destination_Adapters["Destination Adapters"]
+            InMemoryDest["InMemoryMusicDestination"]
+            FutureRoom["Room / SQLite Sink (Phase 4)"]
+            FuturePostgres["PostgreSQL Sink (Phase 4)"]
+        end
+    end
+
+    UI -->|Invokes| EngineAPI
+    EngineAPI --> Domain_Core
+    EngineAPI -->|Calls| SourcePort
+    EngineAPI -->|Calls| DestPort
+    EngineAPI -->|Calls| NormPort
+
+    SpotifyAdapter -.->|Implements| SourcePort
+    SpotifyAdapter --> SpotifyClient
+    SpotifyClient --> SpotifyTokenMgr
+    SpotifyTokenMgr --> SpotifyOAuth
+
+    InMemorySrc -.->|Implements| SourcePort
+    InMemoryDest -.->|Implements| DestPort
+    FutureRoom -.->|Implements| DestPort
+    FuturePostgres -.->|Implements| DestPort
+
+    style Hexagonal_Core fill:#0d1117,stroke:#8B5CF6,stroke-width:3px,color:#ffffff
+    style Domain_Core fill:#161b22,stroke:#3B82F6,stroke-width:2px,color:#ffffff
+    style Infrastructure_Adapters fill:#090d16,stroke:#F59E0B,stroke-width:2px,color:#ffffff
+```
+
+#### Core Architectural Laws:
+1. **The Inward Dependency Rule**: All code dependencies point inward toward the core. Core modules never import from `infrastructure/`.
+2. **Protocol Agnosticism**: The core does not know about HTTP status codes, OAuth scopes, Spotify JSON structures, SQLite tables, or Redis queues.
+3. **Plug-and-Play Swappability**: Any music source adapter (e.g. Spotify, Apple Music, CSV, local files) can be plugged in without changing a single line of core logic.
+
+---
+
+### Figure 2: The 7-Stage Universal Import Lifecycle Pipeline
+
+The Import Engine coordinates data ingestion through a deterministic 7-stage lifecycle with transactional safety guarantees:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Caller / Client
+    participant Engine as ImportEngine
+    participant Validator as Zod / Boundary Validator
+    participant Source as MusicSource (e.g. Spotify)
+    participant Normalizer as TrackNormalizer
+    participant Destination as MusicDestination (e.g. Memory / DB)
+    participant Progress as Progress Observer
+
+    Client->>Engine: importPlaylist(request)
+    activate Engine
+    
+    rect rgb(26, 32, 44)
+    note right of Engine: Stage 1: Request Validation
+    Engine->>Validator: Validate playlistId, batchSize & safety ceiling
+    alt limit > 10,000
+        Engine-->>Client: Return / Throw ImportLimitError
+    end
+    end
+
+    rect rgb(30, 41, 59)
+    note right of Engine: Stage 2: Create ImportJob
+    Engine->>Engine: Generate unique UUID & initialize job (status: running)
+    Engine->>Progress: Emit initial progress snapshot
+    end
+
+    rect rgb(30, 27, 75)
+    note right of Engine: Stage 3: Fetch Source Records
+    Engine->>Source: getPlaylist(playlistId)
+    Source-->>Engine: ImportedPlaylist metadata
+    Engine->>Source: getTracks(playlistId, { limit: boundedLimit })
+    Source-->>Engine: SourceTrackPage (raw / page items)
+    end
+
+    rect rgb(20, 45, 60)
+    note right of Engine: Stage 4: Canonical Track Normalization
+    loop For each source track item
+        Engine->>Normalizer: normalize(rawRecord)
+        Normalizer-->>Engine: Validated ImportedTrack domain entity
+    end
+    end
+
+    rect rgb(45, 20, 50)
+    note right of Engine: Stage 5: Batch Processing & Persistence
+    Engine->>Engine: Split tracks into chunks of configured batchSize
+    alt Playlist is empty (0 tracks)
+        Engine->>Destination: commit(jobId)
+    else Has tracks
+        loop For each batch chunk
+            Engine->>Destination: writeTracks(jobId, batchChunk)
+            Destination-->>Engine: WriteTracksResult (writtenCount)
+            Engine->>Progress: Update writtenTracks, currentBatch, status
+        end
+        alt All batches successful
+            Engine->>Destination: commit(jobId)
+        else Batch write failure
+            Engine->>Destination: rollback(jobId, cause)
+            Engine-->>Client: Fail job & Return / Throw DestinationError
+        end
+    end
+    end
+
+    rect rgb(20, 50, 30)
+    note right of Engine: Stage 6 & 7: Progress Update & Finalization
+    Engine->>Engine: Mark job completed (completedAt timestamp)
+    Engine->>Progress: Emit final completed progress
+    Engine-->>Client: ImportResult (success: true, job, progress)
+    end
+    deactivate Engine
+```
+
+---
+
+### Figure 3: Spotify Infrastructure, OAuth & Lazy Token Refresh
+
+The Spotify adapter layer manages authentication, CSRF tokens, Bearer token injection, and automatic expiration refresh without leaking credentials:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Browser
+    participant App as Application / Server
+    participant OAuth as SpotifyOAuthService
+    participant TokenMgr as SpotifyTokenManager
+    participant HTTP as SpotifyHttpClient
+    participant Accounts as Spotify Accounts (/api/token)
+    participant WebAPI as Spotify Web API (/v1/...)
+
+    rect rgb(35, 25, 45)
+    note over User, Accounts: OAuth Authorization Code Flow
+    App->>OAuth: createAuthorizationUrl({ state: crypto.randomUUID() })
+    OAuth-->>User: Redirect to Spotify Login (with encoded scopes & state)
+    User->>Accounts: User approves permissions
+    Accounts-->>App: Redirect back with code & state
+    App->>OAuth: verifyState(expectedState, receivedState)
+    App->>OAuth: exchangeCodeForToken(code)
+    OAuth->>Accounts: POST /api/token (Basic Auth, grant: authorization_code)
+    Accounts-->>OAuth: 200 OK (access_token, refresh_token, expires_in)
+    OAuth-->>App: SpotifyToken model
+    end
+
+    rect rgb(20, 35, 55)
+    note over TokenMgr, WebAPI: Authenticated API Requests & Lazy Refresh
+    App->>TokenMgr: Initialize with SpotifyToken
+    App->>HTTP: client.get('/v1/playlists/{id}')
+    HTTP->>TokenMgr: getValidAccessToken()
+    
+    alt Token valid & outside 60s safety window
+        TokenMgr-->>HTTP: Return current cached access_token
+    else Token expired or inside 60s safety window
+        TokenMgr->>OAuth: refreshAccessToken(refreshToken)
+        OAuth->>Accounts: POST /api/token (grant: refresh_token)
+        Accounts-->>OAuth: New access_token
+        OAuth-->>TokenMgr: Refreshed SpotifyToken
+        TokenMgr-->>HTTP: Return freshly minted access_token
+    end
+
+    HTTP->>WebAPI: GET /v1/playlists/{id} [Authorization: Bearer <token>]
+    
+    alt 200 OK
+        WebAPI-->>HTTP: JSON payload
+        HTTP-->>App: Parsed response
+    else 429 Rate Limit
+        WebAPI-->>HTTP: 429 Too Many Requests (Retry-After header)
+        HTTP-->>App: Throw SpotifyApiError (retryable: true, retryAfterSeconds)
+    else 401 / 403 Error
+        WebAPI-->>HTTP: 401 / 403 Forbidden
+        HTTP-->>App: Throw SpotifyApiError (retryable: false, secrets scrubbed)
+    end
+    end
+```
+
+---
+
+### Figure 4: Data Normalization Schema Mapping
+
+Spotify API responses are normalized into standard, portable `ImportedTrack` domain entities. Optional or missing fields are handled safely:
+
+```
+[ Raw Spotify Track Payload ]                 [ Canonical ImportedTrack Domain Model ]
+┌───────────────────────────────────────┐     ┌──────────────────────────────────────────────┐
+│ id: "11dFghVXANMlKmJXsNCbNl"          │ ──▶ │ source: "spotify"                            │
+│ name: "Stay"                          │ ──▶ │ sourceId: "11dFghVXANMlKmJXsNCbNl"           │
+│ duration_ms: 141806                   │ ──▶ │ title: "Stay"                                │
+│ explicit: true                        │ ──▶ │ artists: [                                   │
+│ track_number: 1                       │ │   │   { name: "The Kid LAROI", sourceId: "..." } │
+│ disc_number: 1                        │ │   │   { name: "Justin Bieber", sourceId: "..." } │
+│ external_ids: { isrc: "USSM12104193" }│ │   │ ]                                            │
+│ popularity: 88                        │ │   │ album: {                                     │
+│ uri: "spotify:track:..."              │ │   │   title: "F*CK LOVE 3+: OVER YOU",           │
+│ artists: [                            │ │   │   sourceId: "4Gfnly5CzMJQqkUWFOHaP3",        │
+│   { id: "2tIP...", name: "The Kid.." }│ │   │   releaseDate: "2021-07-23",                 │
+│   { id: "1uNF...", name: "Justin.." } │ │   │   totalTracks: 35,                           │
+│ ]                                     │ │   │   artwork: "https://i.scdn.co/stay-art.jpg"  │
+│ album: {                              │ │   │ }                                            │
+│   name: "F*CK LOVE 3+: OVER YOU",     │ │   │ albumArtist: "The Kid LAROI"                 │
+│   images: [{ url: "https://..." }]    │ │   │ durationMs: 141806                           │
+│ }                                     │ │   │ isrc: "USSM12104193"                         │
+│ (null items / deleted tracks)         │ │   │ trackNumber: 1                               │
+│  └── Automatically filtered out       │ │   │ discNumber: 1                                │
+└───────────────────────────────────────┘     │ explicit: true                               │
+                                              │ artwork: "https://i.scdn.co/stay-art.jpg"    │
+                                              │ metadata: { uri, popularity, isPlayable }    │
+                                              └──────────────────────────────────────────────┘
+```
+
+---
+
+### Figure 5: Transactional Safety & Batching Mechanics
+
+```mermaid
+flowchart LR
+    A["Raw Tracks Stream"] --> B["Safety Filter<br/>Max 10,000 Tracks"]
+    B --> C["Track Normalizer<br/>Schema Validation"]
+    C --> D["Batch Chunker<br/>Batch Size = 100"]
+
+    D --> E["Batch #1<br/>(100 Tracks)"]
+    D --> F["Batch #2<br/>(100 Tracks)"]
+    D --> G["Batch #N<br/>(Remaining)"]
+
+    E --> H["Destination.writeTracks()"]
+    F --> H
+    G --> H
+
+    H -->|All Batches OK| I["Destination.commit()<br/>Transaction Committed"]
+    H -->|Any Error| J["Destination.rollback()<br/>Atomic Rollback Triggered"]
+
+    style B fill:#b91c1c,color:#fff,stroke:#ef4444
+    style I fill:#047857,color:#fff,stroke:#10b981
+    style J fill:#7f1d1d,color:#fff,stroke:#f87171
+```
+
+---
+
+## 📁 Directory Structure
 
 ```
 src/
-  core/
-    domain/             # Pure domain entities, Zod schemas, constants, typed errors
-      constants.ts      # MAX_IMPORT_TRACKS (10,000) & DEFAULT_BATCH_SIZE (100)
-      errors.ts         # Structured, machine-readable ImportError hierarchy
-      models.ts         # ImportedTrack, ImportedAlbum, ImportedArtist, ImportedPlaylist, etc.
-      index.ts
-    ports/              # Abstract ports (contracts for sources and destinations)
-      music-source.ts   # MusicSource interface (getPlaylist, getTracks)
-      music-destination.ts # MusicDestination interface (writeTracks, commit, rollback)
-      track-normalizer.ts  # TrackNormalizer interface
-      index.ts
-    services/           # Orchestration and lifecycle coordination
-      default-track-normalizer.ts # Normalization & validation service
-      import-engine.ts  # ImportEngine lifecycle service
-      index.ts
-  infrastructure/       # Outermost adapter implementations
-    memory/             # In-memory reference adapters (InMemoryMusicSource, InMemoryMusicDestination)
-    index.ts
-  index.ts              # Stable public API gateway
+├── core/
+│   ├── domain/                         # Pure domain entities, Zod schemas, constants, errors
+│   │   ├── constants.ts                # MAX_IMPORT_TRACKS (10,000) & DEFAULT_BATCH_SIZE (100)
+│   │   ├── errors.ts                   # Structured, machine-readable ImportError hierarchy
+│   │   ├── models.ts                   # ImportedTrack, ImportedAlbum, ImportedArtist, etc.
+│   │   └── index.ts
+│   ├── ports/                          # Generic port interfaces
+│   │   ├── music-source.ts             # MusicSource interface (getPlaylist, getTracks)
+│   │   ├── music-destination.ts        # MusicDestination interface (writeTracks, commit, rollback)
+│   │   ├── track-normalizer.ts         # TrackNormalizer interface
+│   │   └── index.ts
+│   └── services/                       # Core orchestration services
+│       ├── default-track-normalizer.ts # Zod-based normalization service
+│       ├── import-engine.ts            # ImportEngine 7-stage lifecycle service
+│       └── index.ts
+├── infrastructure/                     # Outer adapter implementations
+│   ├── memory/                         # In-memory reference adapters
+│   │   ├── in-memory-music-source.ts
+│   │   └── in-memory-music-destination.ts
+│   ├── spotify/                        # Spotify Infrastructure Adapter (Phase 2)
+│   │   ├── auth/                       # Spotify OAuth & Token management
+│   │   │   ├── spotify-config.ts       # Typed config & env validation
+│   │   │   ├── spotify-token.ts        # Token model & safety window expiration
+│   │   │   └── spotify-oauth.ts        # Authorization code flow & CSRF state verification
+│   │   ├── client/                     # Authenticated HTTP client
+│   │   │   ├── spotify-errors.ts       # Typed API errors with scrubbed secrets
+│   │   │   ├── spotify-token-manager.ts# Lazy expiration token provider
+│   │   │   └── spotify-http-client.ts  # Native fetch client with Bearer auth & retry hints
+│   │   ├── models/                     # Internal Spotify API response schemas
+│   │   ├── spotify-music-source.ts     # Adapter implementing MusicSource port
+│   │   └── index.ts
+│   └── index.ts
+└── index.ts                            # Stable public API gateway
 
 tests/
-  core/                 # Unit and contract tests
-    import-engine.test.ts
-    domain-validation.test.ts
-    in-memory-adapters.test.ts
+├── core/                               # Core domain & service unit tests
+│   ├── import-engine.test.ts           # Full 7-stage engine lifecycle tests
+│   ├── domain-validation.test.ts       # Domain entity & boundary validation
+│   └── in-memory-adapters.test.ts      # In-memory adapter test suite
+└── infrastructure/                     # Infrastructure adapter unit tests
+    └── spotify/
+        ├── spotify-config.test.ts      # Config parser & env validation
+        ├── spotify-oauth.test.ts       # OAuth, CSRF state & token expiration
+        ├── spotify-http-client.test.ts # Bearer auth, 401/403/429/5xx, auto-refresh
+        └── spotify-music-source.test.ts# Normalization & engine integration
 ```
 
 ---
 
-## Core Concepts
-
-### 1. Domain Entities & Schemas
-- **`ImportedTrack`**: Canonical track representation with source metadata, artists, album, duration, ISRC, track/disc numbers, explicit flag, artwork, and arbitrary metadata bag.
-- **`ImportedAlbum`** & **`ImportedArtist`**: Normalized metadata entities.
-- **`ImportedPlaylist`**: Source-agnostic playlist entity.
-- **`ImportJob`**: Tracks execution state (`pending`, `running`, `completed`, `failed`, `cancelled`), timestamps, and error payloads.
-- **`ImportProgress`**: Real-time progress metrics (`processedTracks`, `writtenTracks`, `currentBatch`, `totalBatches`, `status`).
-
-### 2. Centralized Safety Limits & Batching
-- **`MAX_IMPORT_TRACKS = 10_000`**: Hard safety limit defined in `src/core/domain/constants.ts`. The architecture prevents callers from requesting more than 10,000 tracks via both upfront schema validation (`ImportLimitError`) and stream truncation.
-- **`DEFAULT_BATCH_SIZE = 100`**: Centralized default batch size. Can be overridden per request or engine instance without exceeding the safety ceiling.
-
-### 3. Structured Error Model
-Typed domain errors inheriting from `ImportError`:
-- **`ValidationError`**: Invalid requests, parameters, or corrupt track entities.
-- **`SourceError`**: External source read failures (captures source name, operation, and underlying cause).
-- **`DestinationError`**: Target storage write, commit, or rollback failures.
-- **`ImportLimitError`**: Safety ceiling breaches (`requestedLimit`, `maxAllowed`).
-- **`ImportCancelledError`**: Graceful handling of abort signals (`AbortSignal`).
-
-Every error provides a machine-readable payload via `.toJSON()` containing `code`, `message`, `details`, and ISO `timestamp`.
-
-### 4. ImportEngine Lifecycle
-The engine coordinates the 7-step lifecycle:
-1. **Validate import request**: Ensures valid IDs, bounds batch sizes, checks 10,000-track safety limit, verifies `AbortSignal`.
-2. **Create ImportJob**: Initializes execution record with unique UUID.
-3. **Fetch source records**: Invokes `MusicSource.getPlaylist` and `MusicSource.getTracks`.
-4. **Normalize records**: Converts raw source payloads into validated `ImportedTrack` entities via `TrackNormalizer`.
-5. **Send batches to destination**: Splits tracks into batches, writes via `MusicDestination.writeTracks`, updates progress, and invokes `commit`. On failure, executes `rollback`.
-6. **Update ImportProgress**: Emits progress updates at each stage.
-7. **Complete or Return Error**: Finalizes job status and returns structured result or throws typed error.
-
----
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js LTS (v20+ or v24+)
-- npm 10+
+- **Node.js LTS** (v20+ or v24+)
+- **npm** (v10+)
 
 ### Installation
 
@@ -135,11 +379,17 @@ npm run typecheck
 npm test
 ```
 
+### Production Build
+
+```bash
+npm run build
+```
+
 ---
 
-## Spotify Setup Guide (Phase 2)
+## 🎧 Spotify Setup Guide (Phase 2)
 
-The Spotify integration provides an infrastructure-level source adapter and authentication layer.
+The Spotify integration provides an authenticated source adapter satisfying the generic `MusicSource` port.
 
 > [!IMPORTANT]
 > Real credentials must **NEVER** be committed to the repository or stored in source code. Credentials belong strictly in environment variables.
@@ -160,7 +410,7 @@ cp .env.example .env
 ```
 
 ### 4. Fill Credentials Locally
-Open `.env` and fill in your credentials using environment variables:
+Open `.env` and fill in your credentials:
 
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
@@ -187,7 +437,7 @@ const authUrl = oauthService.createAuthorizationUrl({ state });
 ```
 
 ### 6. Handle the Callback & Verify State
-When the user authorizes and Spotify redirects to your callback URL with `code` and `state`:
+When Spotify redirects to your callback URL with `code` and `state`:
 
 ```typescript
 // Verify that the returned state matches the stored state
@@ -198,6 +448,14 @@ oauthService.verifyState(expectedState, receivedState);
 Exchange the one-time code for a token pair (`accessToken` and `refreshToken`):
 
 ```typescript
+import {
+  SpotifyTokenManager,
+  SpotifyHttpClient,
+  SpotifyMusicSource,
+  ImportEngine,
+  InMemoryMusicDestination,
+} from 'universal-music-import-engine';
+
 const token = await oauthService.exchangeCodeForToken(code);
 
 // Pass token to SpotifyTokenManager and SpotifyHttpClient
@@ -208,18 +466,40 @@ const tokenManager = new SpotifyTokenManager({
 
 const client = new SpotifyHttpClient({ tokenProvider: tokenManager });
 const spotifySource = new SpotifyMusicSource(client);
+
+// Plug directly into the Universal ImportEngine
+const engine = new ImportEngine({
+  source: spotifySource,
+  destination: new InMemoryMusicDestination(),
+});
+
+const result = await engine.importPlaylist({ playlistId: '37i9dQZF1DXcBWIGoYBM5M' });
+console.log('Import success:', result.success, 'Tracks:', result.progress.writtenTracks);
 ```
 
 ---
 
-## What is Intentionally NOT Implemented Yet (Phase 2 Boundary)
+## 🛡️ Security & Zero-Leakage Policy
 
-In accordance with Phase 2 design constraints, the following components are explicitly reserved for subsequent phases:
+- **No Secrets in Logs or Exceptions**: Access tokens and client secrets are never printed in logs or included in `SpotifyApiError` or `SpotifyAuthError` messages.
+- **CSRF Protection**: All OAuth authorization requests mandate a caller-verified `state` token.
+- **Deterministic Test Suite**: All 48 unit tests run against deterministic mock handlers—no live network requests are executed during tests.
+- **Strict Git Boundaries**: Real `.env` files are ignored by git; only `.env.example` with harmless placeholders is committed.
 
-- ❌ **Real Playlist Pagination Loop**: Page-by-page fetching and pagination cursors are deferred to Phase 3.
-- ❌ **10,000-Track Ingestion Engine**: Large-scale streaming pipeline is deferred to Phase 3.
-- ❌ **Persistent Destination Adapters**: Room, SQLite, PostgreSQL, and filesystem sink adapters are deferred to Phase 4.
-- ❌ **Background Queue & Workers**: Redis, BullMQ, and job scheduling are deferred to future milestones.
-- ❌ **CLI & HTTP Servers**: Transport and interface layers will be implemented in later phases.
-- ❌ **Audio Downloading & External Platforms**: No YouTube, Apple Music, or audio stream scraping.
+---
 
+## 🚧 Phase Boundaries & What is Deferred
+
+In accordance with Phase 2 boundaries, the following capabilities are explicitly reserved for subsequent phases:
+
+- ❌ **Phase 3**: Real playlist pagination loops & 10,000-track streaming ingestion.
+- ❌ **Phase 4**: Persistent storage sinks (Room SQLite, PostgreSQL, Filesystem).
+- ❌ **Phase 5**: Asynchronous background job queues (Redis, BullMQ).
+- ❌ **Phase 6**: Transport layers (CLI commands, REST API endpoints, Webhooks).
+- ❌ **Out of Scope**: Audio stream scraping, YouTube / Apple Music integration, DRM tampering.
+
+---
+
+## 📜 License
+
+This project is licensed under the [MIT License](LICENSE).
