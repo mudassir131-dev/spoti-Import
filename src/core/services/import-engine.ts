@@ -356,9 +356,21 @@ export class ImportEngine {
         const nextBatchNumber = committedBatchNumber + 1;
         const batchToWrite = currentBatch;
         currentBatch = [];
+        const batchId = `${jobId}:batch:${nextBatchNumber}`;
+        const batchContext = {
+          batchId,
+          batchIndex: nextBatchNumber,
+          trackCount: batchToWrite.length,
+        };
 
         try {
-          const writeResult = await destination.writeTracks(jobId, batchToWrite, request.signal);
+          const writeResult = await destination.writeTracks(
+            jobId,
+            batchToWrite,
+            request.signal,
+            batchContext
+          );
+          await destination.commit(jobId);
           writtenTracks += writeResult.writtenCount;
           committedProcessedTracks = processedTracks;
           committedSkippedTracks = skippedTracks;

@@ -48,6 +48,7 @@ export type {
 export type {
   MusicDestination,
   WriteTracksResult,
+  WriteBatchContext,
 } from './core/ports/music-destination.js';
 
 export type {
