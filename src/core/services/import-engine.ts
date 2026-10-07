@@ -48,3 +48,12 @@ export interface ImportResult {
   readonly progress: ImportProgress;
   readonly error?: ImportError;
 }
+
+const ImportRequestBaseSchema = z.object({
+  playlistId: z.string({
+    required_error: 'playlistId is required',
+    invalid_type_error: 'playlistId must be a string',
+  }).trim().min(1, 'playlistId cannot be empty'),
+  limit: z.number().int('limit must be an integer').positive('limit must be positive').optional(),
+  batchSize: z.number().int('batchSize must be an integer').positive('batchSize must be positive').optional(),
+});
