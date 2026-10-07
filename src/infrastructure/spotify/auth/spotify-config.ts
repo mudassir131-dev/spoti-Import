@@ -1,3 +1,7 @@
+/**
+ * Spotify Infrastructure - Configuration & Environment Validation
+ */
+
 import { z } from 'zod';
 import { SpotifyConfigError } from '../client/spotify-errors.js';
 
@@ -18,6 +22,9 @@ export const SpotifyConfigSchema = z.object({
 
 export type SpotifyConfig = z.infer<typeof SpotifyConfigSchema>;
 
+/**
+ * Validates and parses raw config options into a validated SpotifyConfig object.
+ */
 export function validateSpotifyConfig(raw: unknown): SpotifyConfig {
   const parseResult = SpotifyConfigSchema.safeParse(raw);
   if (!parseResult.success) {
@@ -29,4 +36,17 @@ export function validateSpotifyConfig(raw: unknown): SpotifyConfig {
     throw new SpotifyConfigError(`Invalid Spotify configuration: ${summary}`, { issues: errorDetails });
   }
   return parseResult.data;
+}
+
+/**
+ * Loads and validates Spotify configuration from an environment variable map (defaults to process.env).
+ */
+export function loadSpotifyConfigFromEnv(
+  env: Record<string, string | undefined> = process.env
+): SpotifyConfig {
+  return validateSpotifyConfig({
+    clientId: env.SPOTIFY_CLIENT_ID,
+    clientSecret: env.SPOTIFY_CLIENT_SECRET,
+    redirectUri: env.SPOTIFY_REDIRECT_URI,
+  });
 }
