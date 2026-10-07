@@ -18,3 +18,5 @@ export interface SpotifyToken {
   readonly scope?: string;
   readonly obtainedAt: number;
 }
+
+export const DEFAULT_SAFETY_WINDOW_SECONDS = 60;
