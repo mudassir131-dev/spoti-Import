@@ -9,3 +9,6 @@ export * from './client/spotify-errors.js';
 export * from './client/spotify-token-manager.js';
 export * from './client/spotify-http-client.js';
 export * from './spotify-music-source.js';
+export * from './spotify-url-parser.js';
+export * from './spotify-public-playlist-source.js';
+
