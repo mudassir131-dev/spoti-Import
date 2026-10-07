@@ -192,3 +192,12 @@ export class SpotifyMusicSource implements MusicSource {
     };
   }
 }
+
+/**
+ * Phase 2 Authenticated Spotify Source alias.
+ * Allows clear architectural distinction between SpotifyPublicPlaylistSource and SpotifyAuthenticatedSource.
+ */
+export const SpotifyAuthenticatedSource = SpotifyMusicSource;
+export type SpotifyAuthenticatedSource = SpotifyMusicSource;
+export type SpotifyAuthenticatedSourceOptions = SpotifyMusicSourceOptions;
+
