@@ -1,3 +1,11 @@
+/**
+ * Spotify Infrastructure - Error Hierarchy
+ * Strictly protects credentials from appearing in error messages or stack traces.
+ */
+
+/**
+ * Raised when Spotify configuration is missing, incomplete, or invalid.
+ */
 export class SpotifyConfigError extends Error {
   readonly code = 'SPOTIFY_CONFIG_ERROR' as const;
   readonly details: Record<string, unknown>;
@@ -9,6 +17,9 @@ export class SpotifyConfigError extends Error {
   }
 }
 
+/**
+ * Raised when OAuth authorization, code exchange, or token refresh operations fail.
+ */
 export class SpotifyAuthError extends Error {
   readonly code = 'SPOTIFY_AUTH_ERROR' as const;
   readonly status?: number;
@@ -22,6 +33,10 @@ export class SpotifyAuthError extends Error {
   }
 }
 
+/**
+ * Raised when a Spotify Web API HTTP request fails.
+ * Captures machine-readable status, retryability, and rate limit hints without exposing tokens.
+ */
 export class SpotifyApiError extends Error {
   readonly code = 'SPOTIFY_API_ERROR' as const;
   readonly status: number;
@@ -48,6 +63,8 @@ export class SpotifyApiError extends Error {
     this.method = options.method.toUpperCase();
     this.spotifyErrorCode = options.spotifyErrorCode;
     this.retryAfterSeconds = options.retryAfterSeconds;
+
+    // By default 429 and 5xx are retryable; 401, 403, 404, etc. are not
     this.retryable = options.retryable ?? (options.status === 429 || (options.status >= 500 && options.status < 600));
   }
 }
