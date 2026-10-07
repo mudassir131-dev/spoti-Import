@@ -64,3 +64,19 @@ function checkSafetyLimit(limit?: number): void {
     throw new ImportLimitError(limit, MAX_IMPORT_TRACKS);
   }
 }
+
+export class ImportEngine {
+  private readonly defaultSource?: MusicSource;
+  private readonly defaultDestination?: MusicDestination;
+  private readonly normalizer: TrackNormalizer;
+  private readonly defaultBatchSize: number;
+  private readonly defaultThrowOnError: boolean;
+
+  constructor(config: ImportEngineConfig = {}) {
+    this.defaultSource = config.source;
+    this.defaultDestination = config.destination;
+    this.normalizer = config.normalizer ?? new DefaultTrackNormalizer();
+    this.defaultBatchSize = config.defaultBatchSize ?? DEFAULT_BATCH_SIZE;
+    this.defaultThrowOnError = config.throwOnError ?? false;
+  }
+}
