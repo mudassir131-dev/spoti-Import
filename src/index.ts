@@ -7,6 +7,7 @@
 export {
   MAX_IMPORT_TRACKS,
   DEFAULT_BATCH_SIZE,
+  CURRENT_SCHEMA_VERSION,
 } from './core/domain/constants.js';
 
 // Domain errors
@@ -28,6 +29,7 @@ export {
   ImportedPlaylistSchema,
   ImportJobStatusSchema,
   ImportCheckpointSchema,
+  ExportResultSchema,
   type ImportedArtist,
   type ImportedAlbum,
   type ImportedTrack,
@@ -36,6 +38,7 @@ export {
   type ImportProgress,
   type ImportJobStatus,
   type ImportCheckpoint,
+  type ExportResult,
 } from './core/domain/models.js';
 
 // Ports (interfaces)
@@ -49,7 +52,9 @@ export type {
   MusicDestination,
   WriteTracksResult,
   WriteBatchContext,
+  ImportMetadata,
 } from './core/ports/music-destination.js';
+
 
 export type {
   TrackNormalizer,

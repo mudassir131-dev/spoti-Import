@@ -7,14 +7,17 @@ import type {
   MusicDestination,
   WriteTracksResult,
   WriteBatchContext,
+  ImportMetadata,
 } from '../../core/ports/music-destination.js';
-import type { ImportedTrack } from '../../core/domain/models.js';
+import type { ImportedTrack, ExportResult } from '../../core/domain/models.js';
 
 export class InMemoryMusicDestination implements MusicDestination {
   readonly name: string;
   readonly committedJobs = new Set<string>();
   readonly rolledBackJobs = new Set<string>();
   readonly tracksByJob = new Map<string, ImportedTrack[]>();
+  readonly metadataByJob = new Map<string, ImportMetadata>();
+  readonly exportResultByJob = new Map<string, ExportResult>();
   private readonly uncommittedBatches = new Map<string, ImportedTrack[]>();
   private readonly committedBatchIds = new Map<string, Set<string>>();
   private readonly uncommittedBatchIds = new Map<string, Set<string>>();
@@ -22,6 +25,11 @@ export class InMemoryMusicDestination implements MusicDestination {
   constructor(name = 'in-memory-destination') {
     this.name = name;
   }
+
+  async initialize(metadata: ImportMetadata): Promise<void> {
+    this.metadataByJob.set(metadata.importId, metadata);
+  }
+
 
   async hasBatch(jobId: string, batchId: string): Promise<boolean> {
     return (
@@ -82,5 +90,31 @@ export class InMemoryMusicDestination implements MusicDestination {
   getCommittedTracks(jobId: string): readonly ImportedTrack[] {
     return this.tracksByJob.get(jobId) ?? [];
   }
+
+  async complete(jobId: string, summary?: Partial<ExportResult>): Promise<ExportResult> {
+    const tracks = this.tracksByJob.get(jobId) ?? [];
+    const meta = this.metadataByJob.get(jobId);
+    const result: ExportResult = {
+      format: summary?.format ?? 'memory',
+      importId: jobId,
+      destinationName: this.name,
+      trackCount: summary?.trackCount ?? tracks.length,
+      writtenCount: summary?.writtenCount ?? tracks.length,
+      skippedCount: summary?.skippedCount ?? 0,
+      failedCount: summary?.failedCount ?? 0,
+      isTruncated: summary?.isTruncated ?? false,
+      schemaVersion: summary?.schemaVersion ?? 1,
+      createdAt: meta?.createdAt ?? summary?.createdAt ?? new Date().toISOString(),
+      completedAt: summary?.completedAt ?? new Date().toISOString(),
+      metadata: summary?.metadata,
+    };
+    this.exportResultByJob.set(jobId, result);
+    return result;
+  }
+
+  async getExportResult(jobId: string): Promise<ExportResult | null> {
+    return this.exportResultByJob.get(jobId) ?? null;
+  }
 }
+
 
