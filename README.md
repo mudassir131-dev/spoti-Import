@@ -577,12 +577,169 @@ The import engine accepts a standard `AbortSignal`:
 | `failed` | Source, destination, normalizer, or runtime error halted the job |
 | `cancelled` | AbortSignal triggered by caller; safe committed state preserved |
 
-### 6. Phase 4 Known Limitations
+---
 
-- Checkpoint persistence in this phase is generic (`CheckpointStore`); persistent database sinks (PostgreSQL, Room SQLite) will implement this port in future phases.
-- Rate limits from external platforms remain subject to remote API throttle rules.
+## 🌐 Phase 5: Universal Output & Data-Exchange Layer
+
+Phase 5 builds a clean, universal output and data-exchange layer so the importer can be consumed by external music projects without coupling the engine to Android, Room, PostgreSQL, SQLite, Redis, Firebase, or any specific application.
+
+```
+Spotify (or other source)
+         ↓
+    Import Engine
+         ↓
+Universal ImportedTrack
+         ↓
+  Destination Adapters
+   ├── JSON Exporter (streaming, schema v1)
+   ├── CSV Exporter (RFC 4180 compliant)
+   ├── Application Adapters (Memory, Custom)
+   └── Future Database / Room SQLite Adapters
+```
+
+### 1. Universal Output Contracts (`ExportResult`)
+
+Every destination adapter implements the extended `MusicDestination` port:
+- `initialize(metadata: ImportMetadata)`: Receives source playlist and job metadata prior to track processing.
+- `writeTracks(jobId, tracks, signal, context)`: Writes batches incrementally with deterministic batch identity.
+- `commit(jobId)`: Commits batch state to destination.
+- `rollback(jobId, error)`: Cleans uncommitted batch state on failure or cancellation.
+- `complete(jobId, summary)`: Finalizes export and returns structured `ExportResult`.
+- `getExportResult(jobId)`: Retrieves canonical execution summary.
+
+```typescript
+export interface ExportResult {
+  readonly format: string;             // 'json' | 'csv' | 'memory' | ...
+  readonly importId: string;
+  readonly destinationName: string;
+  readonly trackCount: number;
+  readonly writtenCount: number;
+  readonly skippedCount: number;
+  readonly failedCount: number;
+  readonly isTruncated: boolean;
+  readonly schemaVersion: number;       // Canonical schema version (default: 1)
+  readonly createdAt: string;
+  readonly completedAt?: string;
+  readonly metadata?: Record<string, unknown>;
+}
+```
+
+### 2. JSON Exporter (`JsonMusicDestination`)
+
+- **Deterministic output**: Fields and arrays are formatted in stable, predictable order.
+- **Streaming & bounded memory**: Supports incremental chunk emission via `writeChunk` callback, allowing 10,000+ tracks to be exported without holding all tracks in memory.
+- **Credential sanitation**: Automatically removes any access tokens, client secrets, or auth headers from metadata.
+- **Schema version**: Root `schemaVersion: 1`.
+
+#### Canonical JSON Structure
+
+```json
+{
+  "schemaVersion": 1,
+  "source": "spotify",
+  "importId": "job-1234-uuid",
+  "playlist": {
+    "id": "37i9dQZF1DXcBWIGoYBM5M",
+    "name": "Today's Top Hits",
+    "description": "Jung Kook is on top of the Hottest 50!",
+    "owner": "Spotify",
+    "totalTracks": 50
+  },
+  "tracks": [
+    {
+      "source": "spotify",
+      "sourceId": "4cOdK2wGLETKBW3PvgPWqT",
+      "title": "Never Gonna Give You Up",
+      "artists": [
+        { "name": "Rick Astley", "sourceId": "0gxyHStUvyUtUt929Ag28q" }
+      ],
+      "album": {
+        "title": "Whenever You Need Somebody",
+        "sourceId": "4Uv86qFgQIFAJrBR2v9I8z",
+        "releaseDate": "1987-11-12"
+      },
+      "durationMs": 213573,
+      "isrc": "GBARL9300134",
+      "trackNumber": 1,
+      "discNumber": 1,
+      "explicit": false
+    }
+  ],
+  "progress": {
+    "processedTracks": 50,
+    "writtenTracks": 50,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "createdAt": "2026-10-08T10:00:00.000Z",
+  "completedAt": "2026-10-08T10:01:00.000Z"
+}
+```
+
+### 3. CSV Exporter (`CsvMusicDestination`)
+
+Compliant with **RFC 4180**:
+- **Standard Columns**:
+  `source,sourceId,title,artists,album,albumArtist,durationMs,isrc,trackNumber,discNumber,explicit,artwork`
+- **Escaping rules**: Commas, double quotes, and newlines inside fields are enclosed in double quotes with doubled internal quotes (`""`).
+- **Multilingual & Unicode**: Fully handles UTF-8 Unicode, accents, Japanese/Korean/Arabic, and emojis.
+- **Deterministic Array Representation**: Artist arrays formatted with deterministic semicolon delimiter (`Artist 1; Artist 2`).
+- **Streaming**: Supports chunk-based batch streaming with `writeChunk`.
+
+### 4. Versioned Import Manifest (`ImportManifest`)
+
+The manifest represents **"What happened during this import?"**, complementing the checkpoint which answers **"Where can the import safely resume?"**.
+
+- **Lifecycle States**: `pending`, `running`, `completed`, `failed`, `cancelled`.
+- **Isolation & Immutability**: Captured manifests cannot be mutated once finalized.
+- **Zero Secrets**: Strictly sanitized; no OAuth tokens or client secrets are persisted.
+- **Store Abstraction**: Managed through `ImportManifestStore` port (`save`, `load`, `list`, `delete`), with reference `InMemoryImportManifestStore`.
+
+```typescript
+export interface ImportManifest {
+  readonly schemaVersion: number;      // Canonical schema version: 1
+  readonly importerVersion: string;    // '0.1.0'
+  readonly importId: string;
+  readonly source: {
+    readonly name: string;
+    readonly playlistId: string;
+    readonly title?: string;
+    readonly owner?: string;
+    readonly totalTracks?: number;
+  };
+  readonly destination: {
+    readonly name: string;
+    readonly format?: string;
+  };
+  readonly lifecycle: {
+    readonly status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    readonly completedAt?: string;
+  };
+  readonly stats: {
+    readonly processedTracks: number;
+    readonly writtenTracks: number;
+    readonly skippedTracks: number;
+    readonly failedTracks: number;
+    readonly isTruncated: boolean;
+    readonly batchCount: number;
+  };
+  readonly error?: Record<string, unknown>;
+  readonly metadata?: Record<string, unknown>;
+}
+```
+
+### 5. Resumed Import Equivalence Guarantee
+
+The engine guarantees that an import completed after one or more resume cycles produces output equivalent to a clean, single-pass run:
+- Playlist ordering is strictly preserved across resumption boundaries.
+- Duplicate occurrences in the source playlist are retained in original sequence.
+- Export result stats (`trackCount`, `writtenCount`, `isTruncated`) match identical clean import values.
 
 ---
+
 
 ## 🛡️ Security & Zero-Leakage Policy
 
@@ -597,11 +754,12 @@ The import engine accepts a standard `AbortSignal`:
 
 - ✅ **Phase 1 Completed**: Universal Music Import Engine domain entities, hexagonal ports, `ImportEngine` lifecycle, batching, and in-memory test harnesses.
 - ✅ **Phase 2 Completed**: Isolated Spotify authentication layer, OAuth flow, automated token lifecycle manager, and `SpotifyAuthenticatedSource`.
-- ✅ **Phase 3 Completed**: Credential-Free Public Spotify Playlist Import Mode (`SpotifyPublicPlaylistSource`), URL parser/validator (`parseSpotifyPlaylistId`), memory-safe streaming pagination, hard 10,000-track ceiling (`MAX_IMPORT_TRACKS`), and deterministic duplicate handling.
 - ✅ **Phase 4 Completed**: Resilient, Resumable & Idempotent Import Pipeline (`ImportCheckpoint`, `CheckpointStore`, batch boundaries, `WriteBatchContext`, AbortSignal cancellation, failure recovery, 16 integration scenarios).
-- ❌ **Phase 5 (Deferred)**: Asynchronous background job queues (Redis, BullMQ, distributed workers).
-- ❌ **Phase 6 (Deferred)**: Transport layers (CLI commands, REST API endpoints, Webhooks).
+- ✅ **Phase 5 Completed**: Universal Output & Data-Exchange Layer (`ExportResult`, `JsonMusicDestination`, `CsvMusicDestination`, `ImportManifest`, `ImportManifestStore`, RFC 4180 CSV compliance, bounded streaming memory, 15 integration scenarios).
+- ❌ **Phase 6 (Deferred)**: Asynchronous background job queues (Redis, BullMQ, distributed workers).
+- ❌ **Phase 7 (Deferred)**: Transport layers (CLI commands, REST API endpoints, Webhooks).
 - ❌ **Out of Scope**: Audio stream scraping, YouTube / Apple Music integration, DRM tampering.
+
 
 ---
 
