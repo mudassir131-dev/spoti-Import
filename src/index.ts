@@ -83,7 +83,10 @@ export {
   InMemoryMusicDestination,
   InMemoryCheckpointStore,
   type InMemorySourceData,
+  JsonMusicDestination,
+  type JsonDestinationOptions,
 } from './infrastructure/index.js';
+
 
 // Spotify Infrastructure (Phase 2 & Phase 3)
 export {
