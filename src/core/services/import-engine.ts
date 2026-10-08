@@ -26,6 +26,7 @@ import type { MusicSource, SourceTrackPage } from '../ports/music-source.js';
 import type { MusicDestination } from '../ports/music-destination.js';
 import type { TrackNormalizer } from '../ports/track-normalizer.js';
 import type { CheckpointStore } from '../ports/checkpoint-store.js';
+import type { ImportManifestStore } from '../ports/manifest-store.js';
 import { DefaultTrackNormalizer } from './default-track-normalizer.js';
 
 export interface ImportRequest {
@@ -57,6 +58,7 @@ export interface ImportExecutionOptions {
   readonly destination?: MusicDestination;
   readonly normalizer?: TrackNormalizer;
   readonly checkpointStore?: CheckpointStore;
+  readonly manifestStore?: ImportManifestStore;
   readonly throwOnError?: boolean;
   readonly onProgress?: (progress: ImportProgress) => void;
 }
@@ -66,6 +68,7 @@ export interface ImportEngineConfig {
   readonly destination?: MusicDestination;
   readonly normalizer?: TrackNormalizer;
   readonly checkpointStore?: CheckpointStore;
+  readonly manifestStore?: ImportManifestStore;
   readonly defaultBatchSize?: number;
   readonly throwOnError?: boolean;
 }
@@ -96,6 +99,7 @@ export class ImportEngine {
   private readonly defaultSource?: MusicSource;
   private readonly defaultDestination?: MusicDestination;
   private readonly defaultCheckpointStore?: CheckpointStore;
+  private readonly defaultManifestStore?: ImportManifestStore;
   private readonly normalizer: TrackNormalizer;
   private readonly defaultBatchSize: number;
   private readonly defaultThrowOnError: boolean;
@@ -104,10 +108,12 @@ export class ImportEngine {
     this.defaultSource = config.source;
     this.defaultDestination = config.destination;
     this.defaultCheckpointStore = config.checkpointStore;
+    this.defaultManifestStore = config.manifestStore;
     this.normalizer = config.normalizer ?? new DefaultTrackNormalizer();
     this.defaultBatchSize = config.defaultBatchSize ?? DEFAULT_BATCH_SIZE;
     this.defaultThrowOnError = config.throwOnError ?? false;
   }
+
 
 
   /**
@@ -198,14 +204,11 @@ export class ImportEngine {
     const batchSize = request.batchSize ?? this.defaultBatchSize;
     const effectiveLimit = Math.min(request.limit ?? MAX_IMPORT_TRACKS, MAX_IMPORT_TRACKS);
 
-    // Check cancellation before job start
-    if (request.signal?.aborted) {
-      throw new ImportCancelledError('pre-execution', 'Import request cancelled before start');
-    }
-
     const startTime = new Date().toISOString();
     const jobId = request.jobId ?? request.importId ?? randomUUID();
     const checkpointStore = options.checkpointStore ?? this.defaultCheckpointStore;
+    const manifestStore = options.manifestStore ?? this.defaultManifestStore;
+
 
     // Check if an existing checkpoint exists for this importId
     let existingCheckpoint = null;
@@ -312,6 +315,10 @@ export class ImportEngine {
 
 
     try {
+      if (request.signal?.aborted) {
+        throw new ImportCancelledError(jobId, 'Import request cancelled before start');
+      }
+
       // 3. Fetch playlist metadata
       let playlist;
       try {
@@ -377,6 +384,41 @@ export class ImportEngine {
         }
       }
 
+      // Record manifest running state if manifest store provided
+      if (manifestStore) {
+        try {
+          await manifestStore.save({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            importerVersion: '0.1.0',
+            importId: jobId,
+            source: {
+              name: source.name,
+              playlistId: request.playlistId,
+              title: playlist.title,
+              owner: playlist.owner,
+              totalTracks: playlist.totalTracks,
+            },
+            destination: {
+              name: destination.name,
+            },
+            lifecycle: {
+              status: 'running',
+              createdAt: currentJob.createdAt,
+              updatedAt: startTime,
+            },
+            stats: {
+              processedTracks: 0,
+              writtenTracks: 0,
+              skippedTracks: 0,
+              failedTracks: 0,
+              isTruncated: false,
+              batchCount: 0,
+            },
+          });
+        } catch (mErr) {
+          console.error(`Failed to record manifest start for ${jobId}:`, mErr);
+        }
+      }
 
       const flushBatch = async (): Promise<void> => {
         if (currentBatch.length === 0) return;
@@ -707,6 +749,43 @@ export class ImportEngine {
         }
       }
 
+      // Record completed manifest if manifest store provided
+      if (manifestStore) {
+        try {
+          await manifestStore.save({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            importerVersion: '0.1.0',
+            importId: jobId,
+            source: {
+              name: source.name,
+              playlistId: request.playlistId,
+              title: playlist.title,
+              owner: playlist.owner,
+              totalTracks: playlist.totalTracks,
+            },
+            destination: {
+              name: destination.name,
+            },
+            lifecycle: {
+              status: 'completed',
+              createdAt: currentJob.createdAt,
+              updatedAt: completionTime,
+              completedAt: completionTime,
+            },
+            stats: {
+              processedTracks,
+              writtenTracks,
+              skippedTracks,
+              failedTracks: 0,
+              isTruncated,
+              batchCount: currentBatchNumber,
+            },
+          });
+        } catch (mErr) {
+          console.error(`Failed to record completed manifest for ${jobId}:`, mErr);
+        }
+      }
+
       return {
         success: true,
         job: currentJob,
@@ -764,6 +843,42 @@ export class ImportEngine {
           console.error(`Failed to save checkpoint for ${jobId}:`, cpErr);
         }
       }
+
+      // Record terminal manifest if manifest store provided
+      if (manifestStore) {
+        try {
+          await manifestStore.save({
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            importerVersion: '0.1.0',
+            importId: jobId,
+            source: {
+              name: source?.name ?? 'unknown',
+              playlistId: request?.playlistId ?? 'unknown',
+            },
+            destination: {
+              name: destination?.name ?? 'unknown',
+            },
+            lifecycle: {
+              status: finalStatus,
+              createdAt: currentJob?.createdAt ?? finishTime,
+              updatedAt: finishTime,
+              completedAt: finishTime,
+            },
+            stats: {
+              processedTracks: committedProcessedTracks,
+              writtenTracks,
+              skippedTracks: committedSkippedTracks,
+              failedTracks: finalStatus === 'failed' ? 1 : 0,
+              isTruncated,
+              batchCount: committedBatchNumber,
+            },
+            error: error.toJSON(),
+          });
+        } catch (mErr) {
+          console.error(`Failed to record terminal manifest for ${jobId}:`, mErr);
+        }
+      }
+
 
       const shouldThrow = options.throwOnError ?? this.defaultThrowOnError;
       if (shouldThrow) {
