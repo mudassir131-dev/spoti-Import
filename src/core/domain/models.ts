@@ -161,5 +161,57 @@ export const ExportResultSchema = z.object({
 });
 export type ExportResult = z.infer<typeof ExportResultSchema>;
 
+/**
+ * Manifest lifecycle status
+ */
+export const ImportManifestStatusSchema = z.enum([
+  'pending',
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+export type ImportManifestStatus = z.infer<typeof ImportManifestStatusSchema>;
+
+/**
+ * Versioned Import Manifest domain model & schema
+ * Captures "What happened during this import?" independently from destination format.
+ */
+export const ImportManifestSchema = z.object({
+  schemaVersion: z.number().int().positive().default(1),
+  importerVersion: z.string().default('0.1.0'),
+  importId: z.string().min(1, 'importId is required'),
+  source: z.object({
+    name: z.string().min(1, 'source name is required'),
+    playlistId: z.string().min(1, 'playlistId is required'),
+    title: z.string().optional(),
+    owner: z.string().optional(),
+    totalTracks: z.number().int().nonnegative().optional(),
+  }),
+  destination: z.object({
+    name: z.string().min(1, 'destination name is required'),
+    format: z.string().optional(),
+  }),
+  lifecycle: z.object({
+    status: ImportManifestStatusSchema,
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    completedAt: z.string().optional(),
+  }),
+  stats: z.object({
+    processedTracks: z.number().int().nonnegative(),
+    writtenTracks: z.number().int().nonnegative(),
+    skippedTracks: z.number().int().nonnegative().default(0),
+    failedTracks: z.number().int().nonnegative().default(0),
+    isTruncated: z.boolean().default(false),
+    batchCount: z.number().int().nonnegative().default(0),
+  }),
+  error: z.custom<ImportErrorPayload>().or(z.record(z.unknown())).optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+export type ImportManifest = z.infer<typeof ImportManifestSchema>;
+
+
 
 

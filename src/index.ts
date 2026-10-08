@@ -30,6 +30,8 @@ export {
   ImportJobStatusSchema,
   ImportCheckpointSchema,
   ExportResultSchema,
+  ImportManifestStatusSchema,
+  ImportManifestSchema,
   type ImportedArtist,
   type ImportedAlbum,
   type ImportedTrack,
@@ -39,7 +41,10 @@ export {
   type ImportJobStatus,
   type ImportCheckpoint,
   type ExportResult,
+  type ImportManifestStatus,
+  type ImportManifest,
 } from './core/domain/models.js';
+
 
 // Ports (interfaces)
 export type {
@@ -64,6 +69,10 @@ export type {
   CheckpointStore,
 } from './core/ports/checkpoint-store.js';
 
+export type {
+  ImportManifestStore,
+} from './core/ports/manifest-store.js';
+
 // Services
 export {
   ImportEngine,
@@ -82,6 +91,7 @@ export {
   InMemoryMusicSource,
   InMemoryMusicDestination,
   InMemoryCheckpointStore,
+  InMemoryImportManifestStore,
   type InMemorySourceData,
   JsonMusicDestination,
   type JsonDestinationOptions,
@@ -92,6 +102,7 @@ export {
   escapeCsvField,
   formatTrackCsvRow,
 } from './infrastructure/index.js';
+
 
 
 // Spotify Infrastructure (Phase 2 & Phase 3)
