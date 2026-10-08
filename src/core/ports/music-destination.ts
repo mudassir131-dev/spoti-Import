@@ -3,7 +3,7 @@
  * Generic abstraction for persistence/target sinks (Memory, Room SQLite, Postgres, Filesystem, etc.)
  */
 
-import type { ImportedTrack } from '../domain/models.js';
+import type { ImportedTrack, ExportResult } from '../domain/models.js';
 
 export interface WriteTracksResult {
   /**
@@ -34,11 +34,33 @@ export interface WriteBatchContext {
   readonly isFinalBatch?: boolean;
 }
 
+/**
+ * Metadata delivered to a destination during import initialization.
+ */
+export interface ImportMetadata {
+  readonly importId: string;
+  readonly playlistId: string;
+  readonly playlistTitle?: string;
+  readonly sourceName: string;
+  readonly description?: string;
+  readonly owner?: string;
+  readonly totalTracks?: number;
+  readonly requestedLimit?: number;
+  readonly deduplicate?: boolean;
+  readonly createdAt: string;
+  readonly metadata?: Record<string, unknown>;
+}
+
 export interface MusicDestination {
   /**
    * Unique identifier or human-readable name of the destination adapter (e.g. "mock-dest", "room-sqlite")
    */
   readonly name: string;
+
+  /**
+   * Optional lifecycle hook called before tracks are written, providing import and source metadata.
+   */
+  initialize?(metadata: ImportMetadata): Promise<void>;
 
   /**
    * Persists a batch of normalized tracks for the active import job.
@@ -65,4 +87,15 @@ export interface MusicDestination {
    * Optional check if a deterministic batch has already been persisted for this job.
    */
   hasBatch?(jobId: string, batchId: string): Promise<boolean>;
+
+  /**
+   * Optional lifecycle hook called when the import completes successfully.
+   */
+  complete?(jobId: string, summary?: Partial<ExportResult>): Promise<ExportResult | void>;
+
+  /**
+   * Optional method to retrieve the resulting export metadata.
+   */
+  getExportResult?(jobId: string): Promise<ExportResult | null>;
 }
+

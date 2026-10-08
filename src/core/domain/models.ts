@@ -141,4 +141,25 @@ export const ImportCheckpointSchema = z.object({
 });
 export type ImportCheckpoint = z.infer<typeof ImportCheckpointSchema>;
 
+/**
+ * Export Result domain model & schema
+ * Represents the universal summary produced by an export or destination adapter.
+ */
+export const ExportResultSchema = z.object({
+  format: z.string().min(1, 'Export format is required'),
+  importId: z.string().min(1, 'importId is required'),
+  destinationName: z.string().min(1, 'destinationName is required'),
+  trackCount: z.number().int().nonnegative(),
+  writtenCount: z.number().int().nonnegative(),
+  skippedCount: z.number().int().nonnegative().default(0),
+  failedCount: z.number().int().nonnegative().default(0),
+  isTruncated: z.boolean().default(false),
+  schemaVersion: z.number().int().positive().default(1),
+  createdAt: z.string(),
+  completedAt: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+export type ExportResult = z.infer<typeof ExportResultSchema>;
+
+
 

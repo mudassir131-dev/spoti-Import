@@ -7,7 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { MAX_IMPORT_TRACKS, DEFAULT_BATCH_SIZE } from '../domain/constants.js';
+import { MAX_IMPORT_TRACKS, DEFAULT_BATCH_SIZE, CURRENT_SCHEMA_VERSION } from '../domain/constants.js';
 import {
   ImportError,
   ValidationError,
@@ -352,6 +352,32 @@ export class ImportEngine {
         isTruncated = true;
       }
 
+      // Initialize destination if supported
+      if (typeof destination.initialize === 'function') {
+        try {
+          await destination.initialize({
+            importId: jobId,
+            playlistId: request.playlistId,
+            playlistTitle: playlist.title,
+            sourceName: source.name,
+            description: playlist.description,
+            owner: playlist.owner,
+            totalTracks: playlist.totalTracks,
+            requestedLimit: request.limit,
+            deduplicate: request.deduplicate,
+            createdAt: currentJob.createdAt,
+            metadata: playlist.metadata,
+          });
+        } catch (initErr) {
+          throw new DestinationError(
+            `Destination '${destination.name}' failed during initialization`,
+            { destinationName: destination.name, operation: 'initialize' },
+            initErr
+          );
+        }
+      }
+
+
       const flushBatch = async (): Promise<void> => {
         if (currentBatch.length === 0) return;
         if (request.signal?.aborted) {
@@ -654,6 +680,31 @@ export class ImportEngine {
           createdAt: currentJob.createdAt,
           updatedAt: completionTime,
         });
+      }
+
+      // Notify destination of completion if supported
+      if (typeof destination.complete === 'function') {
+        try {
+          await destination.complete(jobId, {
+            format: 'universal',
+            importId: jobId,
+            destinationName: destination.name,
+            trackCount: processedTracks,
+            writtenCount: writtenTracks,
+            skippedCount: skippedTracks,
+            failedCount: 0,
+            isTruncated,
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            createdAt: currentJob.createdAt,
+            completedAt: completionTime,
+          });
+        } catch (completeErr) {
+          throw new DestinationError(
+            `Destination '${destination.name}' failed during completion`,
+            { destinationName: destination.name, operation: 'complete' },
+            completeErr
+          );
+        }
       }
 
       return {

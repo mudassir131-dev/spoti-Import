@@ -12,3 +12,9 @@ export const MAX_IMPORT_TRACKS = 10_000;
  * Default number of tracks processed and written to destinations in a single batch.
  */
 export const DEFAULT_BATCH_SIZE = 100;
+
+/**
+ * Universal canonical data-exchange schema version.
+ */
+export const CURRENT_SCHEMA_VERSION = 1;
+
