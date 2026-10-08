@@ -85,6 +85,12 @@ export {
   type InMemorySourceData,
   JsonMusicDestination,
   type JsonDestinationOptions,
+  CsvMusicDestination,
+  type CsvDestinationOptions,
+  CSV_COLUMNS,
+  CSV_HEADER,
+  escapeCsvField,
+  formatTrackCsvRow,
 } from './infrastructure/index.js';
 
 
