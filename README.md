@@ -756,9 +756,63 @@ The engine guarantees that an import completed after one or more resume cycles p
 - ✅ **Phase 2 Completed**: Isolated Spotify authentication layer, OAuth flow, automated token lifecycle manager, and `SpotifyAuthenticatedSource`.
 - ✅ **Phase 4 Completed**: Resilient, Resumable & Idempotent Import Pipeline (`ImportCheckpoint`, `CheckpointStore`, batch boundaries, `WriteBatchContext`, AbortSignal cancellation, failure recovery, 16 integration scenarios).
 - ✅ **Phase 5 Completed**: Universal Output & Data-Exchange Layer (`ExportResult`, `JsonMusicDestination`, `CsvMusicDestination`, `ImportManifest`, `ImportManifestStore`, RFC 4180 CSV compliance, bounded streaming memory, 15 integration scenarios).
-- ❌ **Phase 6 (Deferred)**: Asynchronous background job queues (Redis, BullMQ, distributed workers).
+- ✅ **Phase 6 Completed**: Android Kotlin Bridge & Room Database Adapter (`android-bridge`, `UniversalImportPayload`, `InterchangeValidator`, `UniversalRoomDatabaseAdapter`, `BatchImporter`, transactional checkpoint recovery, 17 integration scenarios).
 - ❌ **Phase 7 (Deferred)**: Transport layers (CLI commands, REST API endpoints, Webhooks).
 - ❌ **Out of Scope**: Audio stream scraping, YouTube / Apple Music integration, DRM tampering.
+
+---
+
+## 📱 Phase 6 — Android Kotlin Bridge & Room Database Adapter
+
+Phase 6 implements the independent Kotlin module that bridges the TypeScript Universal Import Engine to Android applications using Jetpack Room.
+
+### Architecture Overview
+
+```
+TypeScript Import Engine
+    ↓
+Versioned Import Manifest + Track Data
+    ↓
+JSON Interchange Format (v1)
+    ↓
+Kotlin Import Bridge (`android-bridge`)
+    ↓
+Validation & Domain Parsing (`InterchangeValidator`, `InterchangeJsonParser`)
+    ↓
+Room Database Adapter & DAOs (`UniversalRoomDatabaseAdapter`, `TrackDao`, `OccurrenceDao`)
+    ↓
+Android Music Application
+```
+
+### Key Components
+
+1. **Import Interchange Contract (v1)**:
+   - Defined in TypeScript (`src/core/domain/interchange.ts`) and Kotlin (`android-bridge/.../BridgeModels.kt`).
+   - Distinguishes **Track Identity** (`sourceId`), **Playlist Identity** (`id`), **Playlist Occurrence Identity** (`occurrenceId` and `position`), and **Local Database ID** (`id: Long AUTOINCREMENT`).
+   - Fully preserves playlist ordering and repeated track occurrences.
+
+2. **Kotlin Data Models & Validation**:
+   - Built with `kotlinx.serialization`.
+   - Explicit schema version enforcement (`schemaVersion == 1`), failing with `UnsupportedSchemaVersionException` on mismatch.
+   - Structured syntax error handling with `MalformedInterchangeJsonException`.
+   - Permissive metadata parsing (`ignoreUnknownKeys = true`).
+
+3. **Room Database Adapter**:
+   - Decoupled from any single application via clean entity models (`RoomTrackEntity`, `RoomPlaylistEntity`, `RoomPlaylistOccurrenceEntity`, `RoomImportJobEntity`).
+   - Portable SQLite implementation (`UniversalRoomDatabaseAdapter`) supporting both on-device Room and JVM test execution.
+   - Consumer application mapping boundary (`ConsumerTrackMapper<T>`).
+   - Non-destructive schema migrations (`migrateV1ToV2`).
+
+4. **Transactional & Restart-Safe Batch Import**:
+   - `BatchImporter` handles configurable batch sizes (default `100`, max `10,000`).
+   - Transactional writes per batch boundary.
+   - Duplicate execution protection (guards against importing already-completed jobs).
+   - Checkpoint-based resumption (`lastCommittedPosition`) ensuring zero duplicate track records upon restart.
+   - Safe cancellation checks between batch boundaries.
+
+### Verification & Testing
+- **TypeScript**: `npm test` runs 20 test suites, 170 tests passing.
+- **Kotlin / Android Bridge**: `./gradlew test` executes comprehensive 17-scenario integration suite, including 10,000-track batch execution.
 
 
 ---
