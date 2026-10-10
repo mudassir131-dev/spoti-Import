@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_multi_artist_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_collab",
+    "name": "Collaborations",
+    "totalTracks": 1
+  },
+  "isTruncated": false,
+  "tracks": [
+    {
+      "occurrenceId": "occ_0",
+      "position": 0,
+      "source": "spotify",
+      "sourceId": "sp_collab_01",
+      "title": "Starboy",
+      "artists": [
+        { "name": "The Weeknd", "sourceId": "art_weeknd", "roles": ["primary"] },
+        { "name": "Daft Punk", "sourceId": "art_daftpunk", "roles": ["featured"] }
+      ],
+      "album": {
+        "title": "Starboy",
+        "sourceId": "alb_starboy",
+        "releaseDate": "2016-11-25"
+      },
+      "durationMs": 230453,
+      "explicit": true
+    }
+  ],
+  "stats": {
+    "processedTracks": 1,
+    "writtenTracks": 1,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}
