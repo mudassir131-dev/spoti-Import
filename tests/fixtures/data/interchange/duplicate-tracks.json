@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_dups_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_dups_001",
+    "name": "Playlist With Repetitions",
+    "totalTracks": 3
+  },
+  "isTruncated": false,
+  "tracks": [
+    {
+      "occurrenceId": "occ_0",
+      "position": 0,
+      "source": "spotify",
+      "sourceId": "same_song_id",
+      "title": "Repeated Track",
+      "artists": [{ "name": "Artist A" }],
+      "durationMs": 180000
+    },
+    {
+      "occurrenceId": "occ_1",
+      "position": 1,
+      "source": "spotify",
+      "sourceId": "different_song_id",
+      "title": "Interlude",
+      "artists": [{ "name": "Artist B" }],
+      "durationMs": 60000
+    },
+    {
+      "occurrenceId": "occ_2",
+      "position": 2,
+      "source": "spotify",
+      "sourceId": "same_song_id",
+      "title": "Repeated Track",
+      "artists": [{ "name": "Artist A" }],
+      "durationMs": 180000
+    }
+  ],
+  "stats": {
+    "processedTracks": 3,
+    "writtenTracks": 3,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}
