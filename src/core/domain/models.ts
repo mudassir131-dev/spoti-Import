@@ -48,6 +48,9 @@ export const ImportedTrackSchema = z.object({
   explicit: z.boolean().optional(),
   artwork: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
+  position: z.number().int().nonnegative().optional(),
+  occurrenceId: z.string().optional(),
+  addedAt: z.string().optional(),
 });
 export type ImportedTrack = z.infer<typeof ImportedTrackSchema>;
 
