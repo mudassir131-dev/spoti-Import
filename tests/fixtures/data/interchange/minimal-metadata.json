@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_min_001",
+  "source": "custom_source",
+  "status": "completed",
+  "isTruncated": false,
+  "tracks": [
+    {
+      "occurrenceId": "occ_0",
+      "position": 0,
+      "source": "custom_source",
+      "sourceId": "raw_101",
+      "title": "Minimal Title",
+      "artists": [{ "name": "Minimal Artist" }]
+    }
+  ],
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}
