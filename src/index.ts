@@ -45,6 +45,19 @@ export {
   type ImportManifest,
 } from './core/domain/models.js';
 
+// Interchange contracts (Phase 6)
+export {
+  UniversalPlaylistMetadataSchema,
+  UniversalTrackOccurrenceSchema,
+  UniversalImportStatsSchema,
+  UniversalImportPayloadSchema,
+  validateUniversalImportPayload,
+  type UniversalPlaylistMetadata,
+  type UniversalTrackOccurrence,
+  type UniversalImportStats,
+  type UniversalImportPayload,
+} from './core/domain/interchange.js';
+
 
 // Ports (interfaces)
 export type {
