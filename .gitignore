@@ -7,3 +7,6 @@ coverage/
 .env.*
 !.env.example
 .gemini/
+.gradle/
+build/
+*/build/
