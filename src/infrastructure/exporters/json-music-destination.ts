@@ -105,6 +105,9 @@ function sanitizeTrack(track: ImportedTrack): ImportedTrack {
   if (track.discNumber !== undefined) cleanTrack.discNumber = track.discNumber;
   if (track.explicit !== undefined) cleanTrack.explicit = track.explicit;
   if (track.artwork !== undefined) cleanTrack.artwork = track.artwork;
+  if (track.position !== undefined) cleanTrack.position = track.position;
+  if (track.occurrenceId !== undefined) cleanTrack.occurrenceId = track.occurrenceId;
+  if (track.addedAt !== undefined) cleanTrack.addedAt = track.addedAt;
   if (track.metadata) cleanTrack.metadata = sanitizeMetadata(track.metadata);
 
   return cleanTrack;
@@ -218,7 +221,16 @@ export class JsonMusicDestination implements MusicDestination {
       if (signal?.aborted) {
         throw new Error(`Write operation aborted for job '${jobId}' during track serialization`);
       }
-      const track = sanitizeTrack(tracks[i]!);
+      const rawTrack = tracks[i]!;
+      const position = rawTrack.position ?? session.trackCount;
+      const occurrenceId = rawTrack.occurrenceId ?? `occ_${position}`;
+      const trackWithOccurrence: ImportedTrack = {
+        ...rawTrack,
+        position,
+        occurrenceId,
+      };
+      session.trackCount++;
+      const track = sanitizeTrack(trackWithOccurrence);
       const prefix = session.firstTrackWritten ? `,${newline}${indent}` : `${newline}${indent}`;
       const serialized = this.pretty
         ? JSON.stringify(track, null, 2)
@@ -270,6 +282,7 @@ export class JsonMusicDestination implements MusicDestination {
     const session = this.sessions.get(jobId);
     if (!session) return;
 
+    session.trackCount = Math.max(0, session.trackCount - session.uncommittedTrackCount);
     session.uncommittedChunks = [];
     session.uncommittedTrackCount = 0;
     session.isRolledBack = true;
@@ -364,30 +377,38 @@ export class JsonMusicDestination implements MusicDestination {
   }
 
   private formatFooter(session: JsonJobSession, summary?: Partial<ExportResult>): string {
+    const isTruncated = summary?.isTruncated ?? false;
     const progressObj = {
       processedTracks: summary?.trackCount ?? session.writtenCount,
       writtenTracks: summary?.writtenCount ?? session.writtenCount,
       skippedTracks: summary?.skippedCount ?? 0,
       failedTracks: summary?.failedCount ?? 0,
-      isTruncated: summary?.isTruncated ?? false,
+      isTruncated,
     };
 
     const completedAt = summary?.completedAt ?? new Date().toISOString();
     const createdAt = session.metadata?.createdAt ?? summary?.createdAt ?? completedAt;
+    const exportedAt = completedAt;
 
     if (this.pretty) {
       const closing = [
         '\n  ],',
+        `  "status": "completed",`,
+        `  "isTruncated": ${isTruncated},`,
+        `  "stats": ${JSON.stringify(progressObj, null, 2).replace(/\n/g, '\n  ')},`,
         `  "progress": ${JSON.stringify(progressObj, null, 2).replace(/\n/g, '\n  ')},`,
         `  "createdAt": ${JSON.stringify(createdAt)},`,
-        `  "completedAt": ${JSON.stringify(completedAt)}`,
+        `  "completedAt": ${JSON.stringify(completedAt)},`,
+        `  "exportedAt": ${JSON.stringify(exportedAt)}`,
         '}\n',
       ].join('\n');
       return closing;
     }
 
-    return `],"progress":${JSON.stringify(progressObj)},"createdAt":${JSON.stringify(
+    return `],"status":"completed","isTruncated":${isTruncated},"stats":${JSON.stringify(
+      progressObj
+    )},"progress":${JSON.stringify(progressObj)},"createdAt":${JSON.stringify(
       createdAt
-    )},"completedAt":${JSON.stringify(completedAt)}}`;
+    )},"completedAt":${JSON.stringify(completedAt)},"exportedAt":${JSON.stringify(exportedAt)}}`;
   }
 }

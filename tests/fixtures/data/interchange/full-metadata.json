@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_full_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_full_001",
+    "name": "Full Metadata Playlist",
+    "description": "Comprehensive metadata testing",
+    "owner": "curator_pro",
+    "totalTracks": 1,
+    "artwork": "https://images.example.com/pl_full.png",
+    "metadata": {
+      "genre": "electronic",
+      "curated": true
+    }
+  },
+  "isTruncated": false,
+  "tracks": [
+    {
+      "occurrenceId": "occ_0",
+      "position": 0,
+      "source": "spotify",
+      "sourceId": "sp_full_track",
+      "title": "Around the World",
+      "artists": [
+        {
+          "name": "Daft Punk",
+          "sourceId": "art_daft",
+          "roles": ["primary", "producer"],
+          "metadata": { "origin": "France" }
+        }
+      ],
+      "album": {
+        "title": "Homework",
+        "sourceId": "alb_homework",
+        "releaseDate": "1997-01-20",
+        "totalTracks": 16,
+        "artwork": "https://images.example.com/homework.png",
+        "metadata": { "label": "Virgin Records" }
+      },
+      "albumArtist": "Daft Punk",
+      "durationMs": 429000,
+      "isrc": "FRZ039700010",
+      "trackNumber": 7,
+      "discNumber": 1,
+      "explicit": false,
+      "artwork": "https://images.example.com/track_around.png",
+      "addedAt": "2026-10-01T10:00:00.000Z",
+      "metadata": {
+        "bpm": 121,
+        "key": "E minor"
+      }
+    }
+  ],
+  "stats": {
+    "processedTracks": 1,
+    "writtenTracks": 1,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "progress": {
+    "processedTracks": 1,
+    "writtenTracks": 1,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "metadata": {
+    "exporter": "json-music-destination",
+    "version": "1.0.0"
+  },
+  "createdAt": "2026-10-10T12:00:00.000Z",
+  "completedAt": "2026-10-10T12:00:01.000Z",
+  "exportedAt": "2026-10-10T12:00:01.000Z"
+}

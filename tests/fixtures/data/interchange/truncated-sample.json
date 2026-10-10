@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_trunc_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_trunc",
+    "name": "Truncated Import",
+    "totalTracks": 15000
+  },
+  "isTruncated": true,
+  "tracks": [
+    {
+      "occurrenceId": "occ_0",
+      "position": 0,
+      "source": "spotify",
+      "sourceId": "sp_t_0",
+      "title": "Track 0",
+      "artists": [{ "name": "Artist" }]
+    }
+  ],
+  "stats": {
+    "processedTracks": 10000,
+    "writtenTracks": 10000,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": true
+  },
+  "progress": {
+    "processedTracks": 10000,
+    "writtenTracks": 10000,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": true
+  },
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}

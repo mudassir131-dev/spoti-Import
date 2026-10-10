@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_empty_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_empty_001",
+    "name": "Empty Playlist",
+    "description": "Playlist without tracks",
+    "totalTracks": 0
+  },
+  "isTruncated": false,
+  "tracks": [],
+  "stats": {
+    "processedTracks": 0,
+    "writtenTracks": 0,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "progress": {
+    "processedTracks": 0,
+    "writtenTracks": 0,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}

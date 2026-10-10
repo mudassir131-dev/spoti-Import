@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 999,
+  "importId": "import_future_v999",
+  "source": "spotify",
+  "status": "completed",
+  "isTruncated": false,
+  "tracks": [],
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}
