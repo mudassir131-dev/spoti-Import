@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_special_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_special",
+    "name": "Global 🎵 / 日本語 / العربية / Español",
+    "description": "Unicode test: ü, é, å, ñ, 🚀, 'quotes' & \"double\""
+  },
+  "isTruncated": false,
+  "tracks": [
+    {
+      "occurrenceId": "occ_0",
+      "position": 0,
+      "source": "spotify",
+      "sourceId": "sp_utf8_1",
+      "title": "夜に駆ける (Racing into the Night)",
+      "artists": [{ "name": "YOASOBI" }],
+      "durationMs": 261000
+    },
+    {
+      "occurrenceId": "occ_1",
+      "position": 1,
+      "source": "spotify",
+      "sourceId": "sp_utf8_2",
+      "title": "حبيبي (Habibi)",
+      "artists": [{ "name": "Amr Diab" }],
+      "durationMs": 195000
+    }
+  ],
+  "stats": {
+    "processedTracks": 2,
+    "writtenTracks": 2,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}
