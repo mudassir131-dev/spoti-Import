@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_single_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_single_001",
+    "name": "Single Track Playlist",
+    "totalTracks": 1
+  },
+  "isTruncated": false,
+  "tracks": [
+    {
+      "occurrenceId": "occ_0",
+      "position": 0,
+      "source": "spotify",
+      "sourceId": "sp_track_single",
+      "title": "Solo Song",
+      "artists": [{ "name": "Solo Artist", "sourceId": "art_solo" }],
+      "durationMs": 210000
+    }
+  ],
+  "stats": {
+    "processedTracks": 1,
+    "writtenTracks": 1,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "exportedAt": "2026-10-10T12:00:00.000Z"
+}
