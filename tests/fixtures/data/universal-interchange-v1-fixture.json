@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "importId": "import_test_fixture_001",
+  "source": "spotify",
+  "status": "completed",
+  "playlist": {
+    "id": "pl_indie_classics",
+    "name": "Indie Classics",
+    "description": "Essential indie rock tracks",
+    "owner": "curator_01",
+    "totalTracks": 3,
+    "artwork": "https://example.com/artwork/playlist.jpg",
+    "metadata": {
+      "editorial": true
+    }
+  },
+  "isTruncated": false,
+  "tracks": [
+    {
+      "occurrenceId": "import_test_fixture_001:0",
+      "position": 0,
+      "source": "spotify",
+      "sourceId": "track_abc_123",
+      "title": "Mr. Brightside",
+      "artists": [
+        {
+          "name": "The Killers",
+          "sourceId": "art_killers_01",
+          "roles": ["primary"]
+        }
+      ],
+      "album": {
+        "title": "Hot Fuss",
+        "sourceId": "alb_hot_fuss_01",
+        "releaseDate": "2004-06-07",
+        "totalTracks": 11,
+        "artwork": "https://example.com/artwork/hotfuss.jpg"
+      },
+      "albumArtist": "The Killers",
+      "durationMs": 222973,
+      "isrc": "USIR10400084",
+      "trackNumber": 2,
+      "discNumber": 1,
+      "explicit": false,
+      "artwork": "https://example.com/artwork/track1.jpg"
+    },
+    {
+      "occurrenceId": "import_test_fixture_001:1",
+      "position": 1,
+      "source": "spotify",
+      "sourceId": "track_def_456",
+      "title": "Somebody Told Me",
+      "artists": [
+        {
+          "name": "The Killers",
+          "sourceId": "art_killers_01",
+          "roles": ["primary"]
+        }
+      ],
+      "album": {
+        "title": "Hot Fuss",
+        "sourceId": "alb_hot_fuss_01",
+        "releaseDate": "2004-06-07",
+        "totalTracks": 11,
+        "artwork": "https://example.com/artwork/hotfuss.jpg"
+      },
+      "albumArtist": "The Killers",
+      "durationMs": 197200,
+      "isrc": "USIR10400085",
+      "trackNumber": 4,
+      "discNumber": 1,
+      "explicit": false,
+      "artwork": "https://example.com/artwork/track2.jpg"
+    },
+    {
+      "occurrenceId": "import_test_fixture_001:2",
+      "position": 2,
+      "source": "spotify",
+      "sourceId": "track_abc_123",
+      "title": "Mr. Brightside",
+      "artists": [
+        {
+          "name": "The Killers",
+          "sourceId": "art_killers_01",
+          "roles": ["primary"]
+        }
+      ],
+      "album": {
+        "title": "Hot Fuss",
+        "sourceId": "alb_hot_fuss_01",
+        "releaseDate": "2004-06-07",
+        "totalTracks": 11,
+        "artwork": "https://example.com/artwork/hotfuss.jpg"
+      },
+      "albumArtist": "The Killers",
+      "durationMs": 222973,
+      "isrc": "USIR10400084",
+      "trackNumber": 2,
+      "discNumber": 1,
+      "explicit": false,
+      "artwork": "https://example.com/artwork/track1.jpg"
+    }
+  ],
+  "stats": {
+    "processedTracks": 3,
+    "writtenTracks": 3,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "progress": {
+    "processedTracks": 3,
+    "writtenTracks": 3,
+    "skippedTracks": 0,
+    "failedTracks": 0,
+    "isTruncated": false
+  },
+  "metadata": {
+    "environment": "test",
+    "exportType": "full"
+  },
+  "createdAt": "2026-10-10T12:00:00.000Z",
+  "completedAt": "2026-10-10T12:00:02.500Z",
+  "exportedAt": "2026-10-10T12:00:02.500Z"
+}
