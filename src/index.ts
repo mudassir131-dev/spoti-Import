@@ -172,5 +172,8 @@ export {
   formatCommandHelp,
   versionCommand,
   CLI_VERSION,
+  importCommand,
+  createImportCommand,
+  type ImportCommandDependencies,
 } from './cli/index.js';
 

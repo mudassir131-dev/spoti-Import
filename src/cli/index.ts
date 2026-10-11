@@ -9,3 +9,8 @@ export { CliExitCode, type CliIo, type CommandDefinition, type CommandOptionDefi
 export { CliError, CliUsageError, CliExecutionError } from './errors.js';
 export { formatRootHelp, formatCommandHelp } from './help.js';
 export { versionCommand, CLI_VERSION } from './commands/version.js';
+export {
+  importCommand,
+  createImportCommand,
+  type ImportCommandDependencies,
+} from './commands/import.js';

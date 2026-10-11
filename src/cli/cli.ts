@@ -6,6 +6,7 @@ import { CliExitCode, type CliIo, type CommandDefinition } from './types.js';
 import { CliError } from './errors.js';
 import { formatRootHelp, formatCommandHelp } from './help.js';
 import { versionCommand, CLI_VERSION } from './commands/version.js';
+import { importCommand } from './commands/import.js';
 import { CURRENT_SCHEMA_VERSION } from '../core/domain/constants.js';
 
 export class CliRunner {
@@ -13,6 +14,7 @@ export class CliRunner {
 
   constructor() {
     this.registerCommand(versionCommand);
+    this.registerCommand(importCommand);
   }
 
   registerCommand(command: CommandDefinition): void {
