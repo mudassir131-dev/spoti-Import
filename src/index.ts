@@ -175,5 +175,11 @@ export {
   importCommand,
   createImportCommand,
   type ImportCommandDependencies,
+  validateCommand,
+  createValidateCommand,
+  validateJsonContent,
+  validateCsvContent,
+  type ValidationReport,
+  type ValidateCommandDependencies,
 } from './cli/index.js';
 
