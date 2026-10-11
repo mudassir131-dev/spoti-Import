@@ -3,13 +3,22 @@
   "version": "0.1.0",
   "description": "Production-grade Universal Music Import Engine built with Hexagonal Architecture",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "bin": {
+    "music-import": "./dist/src/cli/bin.js"
+  },
+  "files": [
+    "dist/src",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cli": "node dist/src/cli/bin.js"
   },
   "keywords": [
     "music",
