@@ -156,3 +156,21 @@ export {
   SpotifyRateLimitError,
 } from './infrastructure/spotify/index.js';
 
+// CLI (Phase 7)
+export {
+  runCli,
+  CliRunner,
+  defaultCli,
+  CliExitCode,
+  type CliIo,
+  type CommandDefinition,
+  type CommandOptionDefinition,
+  CliError,
+  CliUsageError,
+  CliExecutionError,
+  formatRootHelp,
+  formatCommandHelp,
+  versionCommand,
+  CLI_VERSION,
+} from './cli/index.js';
+
