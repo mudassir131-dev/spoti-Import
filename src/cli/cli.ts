@@ -8,6 +8,7 @@ import { formatRootHelp, formatCommandHelp } from './help.js';
 import { versionCommand, CLI_VERSION } from './commands/version.js';
 import { importCommand } from './commands/import.js';
 import { validateCommand } from './commands/validate.js';
+import { inspectCommand } from './commands/inspect.js';
 import { CURRENT_SCHEMA_VERSION } from '../core/domain/constants.js';
 
 export class CliRunner {
@@ -17,6 +18,7 @@ export class CliRunner {
     this.registerCommand(versionCommand);
     this.registerCommand(importCommand);
     this.registerCommand(validateCommand);
+    this.registerCommand(inspectCommand);
   }
 
   registerCommand(command: CommandDefinition): void {
