@@ -12,7 +12,7 @@
 <p align="center">
   <a href="#-architecture--deep-dive"><img src="https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20Ports%20%26%20Adapters-8B5CF6?style=for-the-badge&logo=blueprint" alt="Hexagonal Architecture"/></a>
   <a href="#-verification--testing"><img src="https://img.shields.io/badge/TypeScript-Strict%20ESM-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript Strict"/></a>
-  <a href="#-verification--testing"><img src="https://img.shields.io/badge/Tests-76%20Passed%20%7C%20Vitest-10B981?style=for-the-badge&logo=vitest" alt="Vitest Passed"/></a>
+  <a href="#-verification--testing"><img src="https://img.shields.io/badge/Tests-220%20Passed%20%7C%20Vitest-10B981?style=for-the-badge&logo=vitest" alt="Vitest Passed"/></a>
   <a href="#-security--credentials"><img src="https://img.shields.io/badge/Security-Zero%20Secrets%20in%20Repo-EF4444?style=for-the-badge&logo=security" alt="Security"/></a>
   <a href="#-license"><img src="https://img.shields.io/badge/License-GNU%20GPL%20v3-F59E0B?style=for-the-badge&logo=gnu" alt="GNU GPL v3 License"/></a>
 </p>
@@ -757,7 +757,8 @@ The engine guarantees that an import completed after one or more resume cycles p
 - ✅ **Phase 4 Completed**: Resilient, Resumable & Idempotent Import Pipeline (`ImportCheckpoint`, `CheckpointStore`, batch boundaries, `WriteBatchContext`, AbortSignal cancellation, failure recovery, 16 integration scenarios).
 - ✅ **Phase 5 Completed**: Universal Output & Data-Exchange Layer (`ExportResult`, `JsonMusicDestination`, `CsvMusicDestination`, `ImportManifest`, `ImportManifestStore`, RFC 4180 CSV compliance, bounded streaming memory, 15 integration scenarios).
 - ✅ **Phase 6 Completed**: Android Kotlin Bridge & Room Database Adapter (`android-bridge`, `UniversalImportPayload`, `InterchangeValidator`, `UniversalRoomDatabaseAdapter`, `BatchImporter`, transactional checkpoint recovery, 17 integration scenarios).
-- ❌ **Phase 7 (Deferred)**: Transport layers (CLI commands, REST API endpoints, Webhooks).
+- ✅ **Phase 7 Completed**: Universal CLI Transport Layer (`music-import` CLI binary, `version`, `import`, `validate`, `inspect`, POSIX exit codes, streaming JSON & RFC 4180 CSV, 10 integration scenarios).
+- ❌ **Future Deferred**: REST API endpoints, Webhooks, Desktop UI wrapper.
 - ❌ **Out of Scope**: Audio stream scraping, YouTube / Apple Music integration, DRM tampering.
 
 ---
@@ -811,8 +812,86 @@ Android Music Application
    - Safe cancellation checks between batch boundaries.
 
 ### Verification & Testing
-- **TypeScript**: `npm test` runs 20 test suites, 170 tests passing.
+- **TypeScript**: `npm test` runs 25 test suites, 220 tests passing.
 - **Kotlin / Android Bridge**: `./gradlew test` executes comprehensive 17-scenario integration suite, including 10,000-track batch execution.
+
+
+---
+
+## 💻 Phase 7 — Universal Command Line Interface (CLI)
+
+Phase 7 implements the standalone, production-grade CLI executable (`music-import`) serving as the driving adapter in the Hexagonal Architecture.
+
+### Installation & Execution
+
+```bash
+# Execute via npm script
+npm run cli -- <command> [options]
+
+# Or link and execute globally
+npm link
+music-import --help
+```
+
+### Command Reference
+
+#### 1. Version (`music-import version`)
+Displays CLI version and domain schema version:
+```bash
+music-import version
+# Output: music-import v0.1.0 (schema v1)
+```
+
+#### 2. Import (`music-import import <playlist> [options]`)
+Imports a playlist from a Spotify URL, URI, or ID into canonical JSON or RFC 4180 CSV:
+```bash
+# Stream import to JSON file with 2-space indentation
+music-import import 37i9dQZF1DXcBWIGoYBM5M --format json --out ./playlist.json --pretty
+
+# Stream import to RFC 4180 CSV file
+music-import import https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M -f csv -o ./playlist.csv
+
+# Deduplicate tracks by source ID with custom batch size
+music-import import 37i9dQZF1DXcBWIGoYBM5M --batch-size 50 --deduplicate --out ./dedup.json
+```
+
+| Option | Short | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `--format` | `-f` | `string` | `json` | Output format: `json` or `csv` |
+| `--out` | `-o` | `string` | stdout | Destination file path (omitted or `-` writes to stdout) |
+| `--batch-size` | `-b` | `number` | `100` | Ingestion batch chunk size (1 to 10,000) |
+| `--limit` | `-l` | `number` | - | Max tracks to ingest (up to 10,000 ceiling) |
+| `--pretty` | `-p` | `boolean` | `false` | Pretty print JSON with 2-space indentation |
+| `--deduplicate`| `-d` | `boolean` | `false` | Deduplicate repeated tracks by source ID |
+| `--public` | - | `boolean` | `true` | Use public credential-free Spotify web scraper |
+| `--client-id` | - | `string` | - | Spotify Developer Client ID |
+| `--client-secret`| - | `string` | - | Spotify Developer Client Secret |
+| `--quiet` | `-q` | `boolean` | `false` | Suppress progress output |
+
+#### 3. Validate (`music-import validate <file> [options]`)
+Validates an exported JSON file against Schema v1 or CSV against RFC 4180 contracts:
+```bash
+music-import validate ./playlist.json
+music-import validate ./playlist.csv -f csv
+```
+
+#### 4. Inspect (`music-import inspect <target> [options]`)
+Inspects playlist metadata and sample tracks without performing full ingestion:
+```bash
+# Inspect remote Spotify playlist
+music-import inspect 37i9dQZF1DXcBWIGoYBM5M --sample 5
+
+# Inspect local export file in JSON output format
+music-import inspect ./playlist.json --json
+```
+
+### Process Exit Codes
+| Code | Name | Description |
+| :---: | :--- | :--- |
+| `0` | `SUCCESS` | Successful execution |
+| `1` | `ERROR` | Runtime error or validation failure |
+| `2` | `INVALID_ARGUMENTS` | Missing argument or invalid option |
+| `130`| `CANCELLED` | Aborted via AbortSignal or SIGINT |
 
 
 ---
