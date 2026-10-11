@@ -181,5 +181,9 @@ export {
   validateCsvContent,
   type ValidationReport,
   type ValidateCommandDependencies,
+  inspectCommand,
+  createInspectCommand,
+  type InspectionSummary,
+  type InspectCommandDependencies,
 } from './cli/index.js';
 

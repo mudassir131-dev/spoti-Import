@@ -22,3 +22,9 @@ export {
   type ValidationReport,
   type ValidateCommandDependencies,
 } from './commands/validate.js';
+export {
+  inspectCommand,
+  createInspectCommand,
+  type InspectionSummary,
+  type InspectCommandDependencies,
+} from './commands/inspect.js';
