@@ -14,3 +14,11 @@ export {
   createImportCommand,
   type ImportCommandDependencies,
 } from './commands/import.js';
+export {
+  validateCommand,
+  createValidateCommand,
+  validateJsonContent,
+  validateCsvContent,
+  type ValidationReport,
+  type ValidateCommandDependencies,
+} from './commands/validate.js';
