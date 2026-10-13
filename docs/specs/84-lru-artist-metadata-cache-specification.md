@@ -1,0 +1,13 @@
+# Technical Specification 84: Bounded LRU Artist Cache Capacity and Eviction Rules Specification
+
+## 1. Scope & Objective
+Specification of doubly linked list LRU cache invariants, maximum capacity limits (5,000 entries), and deterministic entry eviction policies.
+
+## 2. Formal Invariants
+- All operations must be deterministic, idempotent, and memory-bounded.
+- Input payloads violating structural schema constraints must fail fast with descriptive diagnostic codes.
+- Concurrency controls must prevent deadlocks and race conditions during high-throughput ingestion.
+
+## 3. Conformance Criteria
+- Validated against strict TypeScript compilation without type assertions.
+- 100% test coverage under Vitest integration test suites.
